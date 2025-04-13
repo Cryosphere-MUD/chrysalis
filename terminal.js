@@ -390,7 +390,7 @@ export function handleUnicode(data) {
   handleChar(data);
 }
 
-let utf8fragment = [];
+let utf8fragment = "";
 
 export function handleTerminal(data) {
   if (data === undefined) {
@@ -401,10 +401,10 @@ export function handleTerminal(data) {
     handleUnicode(String.fromCharCode(data));
     return;
   }
-  utf8fragment.push(data);
-  try {
+  utf8fragment += String.fromCharCode(data);
+  try { 
     const decoded = utf8.decode(utf8fragment);
-    utf8fragment = [];
+    utf8fragment = "";
     handleUnicode(decoded);
   } catch (err) {
     // do nothing
