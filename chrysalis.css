@@ -4,6 +4,37 @@ body {
 	color: white
 }
 
+#input {
+	font-family: monospace;
+	background-color: black;
+	color: white
+}
+
+#main {
+	overflow: auto;
+	height: 100%;
+}
+
+#measure {
+	display: hidden;
+	background-color: black;
+	color: black;
+}
+
+#wide {
+	display: hidden;
+	background-color: black;
+	color: black;
+}
+
+#prompt {
+	float: left;
+}
+
+.cursor {
+	background-color: red;
+}
+
 .term_ital {
   font-style: italic
 }
@@ -122,33 +153,3 @@ body {
   background-color: #c0c0c0;
 }
 
-#input {
-	font-family: monospace;
-	background-color: black;
-	color: white
-}
-
-#main {
-	overflow: auto;
-	height: 90%;
-}
-
-#measure {
-	display: hidden;
-	background-color: black;
-	color: black;
-}
-
-#wide {
-	display: hidden;
-	background-color: black;
-	color: black;
-}
-
-#prompt {
-	float: left;
-}
-
-.cursor {
-	background-color: red;
-}

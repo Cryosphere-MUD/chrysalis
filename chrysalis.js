@@ -11,9 +11,12 @@ const measure = document.getElementById("measure");
 
 function updateSize() {
   const fullWidth = $(wide).width();
+  const fullHeight= $(main).height();
+  const lineHeight = measure.offsetHeight;
 
   const width = Math.floor(fullWidth / measure.offsetWidth) - 10;
-  sendSize(width);
+  const height = Math.floor(fullHeight / lineHeight) - 2;
+  sendSize(width, height);
 }
 
 window.addEventListener("resize", updateSize);

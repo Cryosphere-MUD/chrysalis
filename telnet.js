@@ -43,15 +43,17 @@ function encodeSubNeg(subMode, data) {
 }
 
 let currentWidth = 80;
+let currentHeight = 30;
 
 function encodeNAWS() {
-  return encodeSubNeg(TELOPT_NAWS, [0, currentWidth, 0, 30]);
+  return encodeSubNeg(TELOPT_NAWS, [0, currentWidth, 0, currentHeight]);
 }
 
 let naws = false;
 
-export function sendSize(width) {
+export function sendSize(width, height) {
   currentWidth = width;
+  currentHeight = height;
   if (naws) {
     socketSend(encodeNAWS());
   }
