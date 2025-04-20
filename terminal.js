@@ -66,42 +66,68 @@ function attrToClassAndStyle(myattr) {
   return { class: str, style };
 }
 
-function lineToHTML(line) {
-  let outLine = "";
+function lineToElements(line) {
+
+  let outLine = document.createDocumentFragment();
   let lastClass = {};
+
+  let currentSpan;
 
   line.forEach(arg => {
     const cls = arg.cls;
     if (cls.class !== lastClass.class || cls.style !== lastClass.style) {
-      if (outLine.length) {
-        outLine += "</span>";
-      }
-      let myattr = "";
-      if (cls.class) {
-        myattr += `class="${cls.class} "`;
-      }
-      if (cls.style) {
-        myattr += `style="${cls.style} "`;
-      }
-      outLine += `<span ${myattr}>`;
+        if (currentSpan) {
+            outLine.appendChild(currentSpan);
+        }
+        currentSpan = document.createElement('span');
+
+      if (cls.class) currentSpan.setAttribute("class", cls.class);
+      if (cls.style) currentSpan.setAttribute("style", cls.style);
+
       lastClass = cls;
     }
 
-    outLine += arg.data;
+    currentSpan.innerText += arg.data;
   });
 
-  return outLine;
+  if (currentSpan) {
+    outLine.appendChild(currentSpan);
+    return outLine;
+  }
+  return;
 }
 
 let outLine = [];
 let cr = false;
+let outputBatch = [];
+
+function outputData(data)
+{
+  if (data == null)
+  {
+        return;
+  }
+  outputBatch.push(data);
+}
+
+export function renderOutputData()
+{
+  const frag = document.createDocumentFragment();
+  for (let line of outputBatch) {
+     frag.append(line);
+  }
+  output.appendChild(frag);
+  outputBatch = [];
+}
 
 function handleChar(data) {
   if (data === "\r") {
     cr = true;
   } else if (data === "\n") {
-    output.innerHTML += lineToHTML(outLine);
-    output.innerHTML += "<br />";
+    if (outLine.length) {
+      outputData(lineToElements(outLine));
+    }
+    outputData(document.createElement("br"));
     outLine = [];
     cr = false;
   } else {
@@ -112,27 +138,30 @@ function handleChar(data) {
 
     const cls = attrToClassAndStyle(attr);
 
-    if (data === " ") data = "&nbsp;";
-    if (data === "<") data = "&lt;";
-    if (data === ">") data = "&gt;";
-    if (data === "&") data = "&amp;";
+    if (data === " ") data = "\xa0";
 
     outLine.push({ cls, data });
   }
 }
 
+let promptLine;
+
 function handlePrompt() {
-  prompt.innerHTML = lineToHTML(outLine);
+  promptLine = outLine;
+  let promptElements = lineToElements(outLine);
+  prompt.replaceChildren(promptElements);
   outLine = [];
 }
 
 export function appendCommand(command, echo) {
-  if (echo) {
-    output.innerHTML += prompt.innerHTML;
-    output.innerHTML += htmlescape(command);
-    output.innerHTML += "<br />";
+  if (echo)
+  {
+    outputData(lineToElements(promptLine));
+    outputData(command);
+    outputData(document.createElement("br"));
+    renderOutputData();
   }
-  prompt.innerHTML = "";
+  prompt.replaceChildren();
 }
 
 function get256(code) {

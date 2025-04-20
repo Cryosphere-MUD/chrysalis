@@ -4,6 +4,8 @@ import { handleTelnet, sendSize } from "./telnet.js";
 
 import { getSocket } from "./socket.js";
 
+import { renderOutputData } from "./terminal.js"
+
 import { keyDown } from "./command.js";
 
 const main = document.getElementById("main");
@@ -32,6 +34,7 @@ const ws = getSocket();
 ws.onmessage = event => {
   const arr = new Uint8Array(event.data);
   arr.forEach(ch => handleTelnet(ch));
+  renderOutputData();
   scrollToEnd();
 };
 
