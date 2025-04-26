@@ -1,5 +1,5 @@
 body {
-	font-family: monospace;
+	font-family: sans-serif;
 	background-color: black;
 	color: white
 }
@@ -35,6 +35,10 @@ body {
 	background-color: red;
 }
 
+.term_mono {
+        font-family: monospace;
+}
+      
 .term_ital {
   font-style: italic
 }

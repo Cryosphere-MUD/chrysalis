@@ -15,6 +15,7 @@ let attr = {
   inv: false,
   str: false,
   hide: false,
+  mono: false
 };
 
 function attrToClassAndStyle(myattr) {
@@ -47,6 +48,9 @@ function attrToClassAndStyle(myattr) {
     style += bg;
   } else {
     str += ` term_bg${bg}`;
+  }
+  if (attr.mono) {
+    str += " term_mono";
   }
   if (attr.ital) {
     str += " term_ital";
@@ -249,7 +253,9 @@ function handleColorCommand(commands) {
     switch (cmd) {
       case "":
       case "0":
+        let oldmono = attr.mono;
         attr = Object.assign({}, defattr);
+        attr.mono = oldmono;
         break;
       case "1":
         attr.bold = true;
@@ -361,6 +367,12 @@ function handleColorCommand(commands) {
         break;
       case "55":
         attr.over = false;
+        break;
+      case "100":
+        attr.mono = false;
+        break;
+      case "101":
+        attr.mono = true;
         break;
       default:
         console.log("unknown ANSI code", cmd);
