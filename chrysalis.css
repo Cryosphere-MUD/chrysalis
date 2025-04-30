@@ -1,5 +1,5 @@
 body {
-	font-family: sans-serif;
+	font-family: monospace;
 	background-color: black;
 	color: white
 }
@@ -35,8 +35,8 @@ body {
 	background-color: red;
 }
 
-.term_mono {
-        font-family: monospace;
+.term_prop {
+        font-family: sans-serif;
 }
       
 .term_ital {
