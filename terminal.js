@@ -15,7 +15,8 @@ let attr = {
   inv: false,
   str: false,
   hide: false,
-  prop: false
+  prop: false,
+  url: null,
 };
 
 function attrToClassAndStyle(myattr) {
@@ -390,14 +391,27 @@ function handleEscape(str, code) {
   }
 }
 
-let esc = false;
+let mode = 0;
 let escStr = "";
 
 const ESC = "\x1B";
 const CSI = "\x9B";
+const BEL = "\x07";
+const OSC = "]";
+const OSC_ESC = "]\x1b";
 
 function isLetter(str) {
   return str.length === 1 && str.match(/[a-z]/i);
+}
+
+function handleOsc(oscstr)
+{
+        let commands = oscstr.substr(0).split(";");
+        if (commands[0] == '0' || commands[0] == '2')
+                document.title = commands[1]; 
+
+        if (commands[0] == '8')
+                attr.url = commands[2]
 }
 
 export function handleUnicode(data) {
@@ -406,24 +420,64 @@ export function handleUnicode(data) {
     return;
   }
 
-  if (esc) {
+  if (mode == OSC_ESC) {
+        if (data == '\\')
+        {
+                handleOsc(escStr);
+                escStr = "";
+                mode = 0;
+                return;
+        }
+        mode = 0;
+        return;
+  }
+
+  if (mode == OSC) {
+        if (data == ESC) {
+            mode = OSC_ESC;
+            return;
+        }
+        if (data == BEL) {
+            handleOsc(escStr);
+            escStr = "";
+            mode = 0;
+            return;
+        }
+        escStr += data;
+        return;
+      }    
+    
+  if (mode == CSI) {
     if (isLetter(data)) {
-      handleEscape(escStr, data);
-      esc = false;
+        handleEscape(escStr, data);
+        mode = 0;
+        escStr = "";
+      }
+      escStr += data;
+      return;
+    }
+
+  if (mode == ESC) {
+   if (data == OSC) {
+      mode = OSC;
       escStr = "";
+      return;
+    }
+    if (data == '[') {
+        mode = CSI;
     }
     escStr += data;
     return;
   }
 
   if (data === ESC) {
-    esc = true;
+    mode = ESC;
     escStr = "";
     return;
   }
 
   if (data === CSI) {
-    esc = true;
+    mode = ESC;
     escStr = "[";
     return;
   }
