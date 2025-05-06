@@ -87,16 +87,26 @@ function handleNegotiation(state, code) {
   console.log("IAC ", state, code);
 }
 
+let ttypeCount = 0;
+
 function handleSubnegotiation(subMode, subData) {
   if (subMode === TTYPE && subData.length === 1 && subData[0] === SEND) {
     const cmd = [IAC, SB, TTYPE, IS];
 
-    const name = "chrysalis2";
+    let name;
 
-    for (let idx = 0; idx < name.length; idx += 1) {
-      cmd.push(name.charCodeAt(idx));
+    switch (ttypeCount) {
+        case 0: name = "chrysalis2"; break;
+        case 1: name = "chrysalis2:002_2025-05-06"; break;
+        case 2: default: name = "MTTS " + (1 + 4 + 8);
     }
 
+    ttypeCount++;
+
+    for (let idx = 0; idx < name.length; idx += 1) {
+        cmd.push(name.charCodeAt(idx));
+    }
+    
     cmd.push(IAC);
     cmd.push(SE);
 
