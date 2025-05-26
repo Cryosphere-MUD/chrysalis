@@ -1,5 +1,3 @@
-import { htmlescape } from "./utils.js";
-
 const output = document.getElementById("output");
 const prompt = document.getElementById("prompt");
 
@@ -326,8 +324,14 @@ function handleColorCommand(commands) {
         attr.fgcol = "white";
         break;
       case "38":
-        attr.fgcol = get256(commands[idx + 2]);
-        idx += 2;
+        if (commands[idx + 1] == "2") {
+                // ignore TRUECOLOR for now
+                idx += 4;
+        }
+        if (commands[idx + 1] == "5") {
+                attr.fgcol = get256(commands[idx + 2]);
+                idx += 2;
+        }
         break;
       case "39":
         attr.fgcol = "white";
@@ -357,7 +361,13 @@ function handleColorCommand(commands) {
         attr.bgcol = "white";
         break;
       case "48":
-        attr.bgcol = get256(commands[idx + 2]);
+        if (commands[idx + 1] == "2") {
+                // ignore TRUECOLOR for now
+                idx += 4;
+        }
+        if (commands[idx + 1] == "5") {
+                attr.bgcol = get256(commands[idx + 2]);
+        }
         idx += 2;
         break;
       case "49":
@@ -368,12 +378,6 @@ function handleColorCommand(commands) {
         break;
       case "55":
         attr.over = false;
-        break;
-      case "100":
-        attr.prop = true;
-        break;
-      case "101":
-        attr.prop = false;
         break;
       default:
         console.log("unknown ANSI code", cmd);
