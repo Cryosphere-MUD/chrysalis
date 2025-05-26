@@ -1,0 +1,3 @@
+[submodule "utf8.js"]
+	path = utf8.js
+	url = https://github.com/mathiasbynens/utf8.js

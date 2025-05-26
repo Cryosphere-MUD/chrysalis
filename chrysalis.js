@@ -1,5 +1,3 @@
-import "./jquery.js";
-
 import { handleTelnet, sendSize } from "./telnet.js";
 
 import { getSocket } from "./socket.js";
