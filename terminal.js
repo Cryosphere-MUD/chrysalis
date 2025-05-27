@@ -167,6 +167,13 @@ export function appendCommand(command, echo) {
   prompt.replaceChildren();
 }
 
+function gettruecolor(r, g, b) {
+        let col = "#" + [r, g, b]
+        .map(x => parseInt(x).toString(16).padStart(2, "0"))
+        .join("");
+        return col;
+}
+
 function get256(code) {
   if (code < 16) {
     const colors = [
@@ -325,7 +332,7 @@ function handleColorCommand(commands) {
         break;
       case "38":
         if (commands[idx + 1] == "2") {
-                // ignore TRUECOLOR for now
+                attr.fgcol = gettruecolor(commands[idx + 2], commands[idx + 3], commands[idx + 4]);
                 idx += 4;
         }
         if (commands[idx + 1] == "5") {
@@ -362,7 +369,7 @@ function handleColorCommand(commands) {
         break;
       case "48":
         if (commands[idx + 1] == "2") {
-                // ignore TRUECOLOR for now
+                attr.fgcol = gettruecolor(commands[idx + 2], commands[idx + 3], commands[idx + 4]);
                 idx += 4;
         }
         if (commands[idx + 1] == "5") {
