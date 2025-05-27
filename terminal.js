@@ -369,7 +369,7 @@ function handleColorCommand(commands) {
         break;
       case "48":
         if (commands[idx + 1] == "2") {
-                attr.fgcol = gettruecolor(commands[idx + 2], commands[idx + 3], commands[idx + 4]);
+                attr.bgcol = gettruecolor(commands[idx + 2], commands[idx + 3], commands[idx + 4]);
                 idx += 4;
         }
         if (commands[idx + 1] == "5") {
