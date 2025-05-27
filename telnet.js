@@ -14,6 +14,10 @@ import {
   TELOPT_NAWS,
   TELOPT_EOR,
   EOR,
+  MTTS_ANSI,
+  MTTS_UTF8,
+  MTTS_256,
+  MTTS_TRUECOLOR,
 } from "./telnetconstants.js";
 
 import { socketSend } from "./socket.js";
@@ -98,7 +102,7 @@ function handleSubnegotiation(subMode, subData) {
     switch (ttypeCount) {
         case 0: name = "chrysalis2"; break;
         case 1: name = "chrysalis2:002_2025-05-06"; break;
-        case 2: default: name = "MTTS " + (1 + 4 + 8);
+        case 2: default: name = "MTTS " + (MTTS_ANSI | MTTS_UTF8 | MTTS_256 | MTTS_TRUECOLOR);
     }
 
     ttypeCount++;
