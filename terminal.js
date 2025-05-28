@@ -71,16 +71,30 @@ function attrToClassAndStyle(myattr) {
 
 function lineToElements(line) {
 
-  let outLine = document.createDocumentFragment();
+  let outItem = document.createDocumentFragment();
   let lastClass = {};
+
+  let workingLine = outItem;
 
   let currentSpan;
 
+  let indent;
+
+  line.forEach((arg, pos) => {
+        if (arg.isIndentMarker && indent == null) {
+                indent = pos;
+                workingLine = document.createElement('span');
+                workingLine.setAttribute("class", "indent_" + (pos - 1));
+                outItem.appendChild(workingLine);
+        }
+  });
+
   line.forEach(arg => {
     const cls = arg.cls;
+
     if (cls.class !== lastClass.class || cls.style !== lastClass.style) {
         if (currentSpan) {
-            outLine.appendChild(currentSpan);
+                workingLine.appendChild(currentSpan);
         }
         currentSpan = document.createElement('span');
 
@@ -94,8 +108,8 @@ function lineToElements(line) {
   });
 
   if (currentSpan) {
-    outLine.appendChild(currentSpan);
-    return outLine;
+    workingLine.appendChild(currentSpan);
+    return outItem;
   }
   return;
 }
@@ -123,6 +137,10 @@ export function renderOutputData()
   outputBatch = [];
 }
 
+let lastData;
+
+let gotIndentMarker = false;
+
 function handleChar(data) {
   if (data === "\r") {
     cr = true;
@@ -141,9 +159,20 @@ function handleChar(data) {
 
     const cls = attrToClassAndStyle(attr);
 
-    if (data === " ") data = "\xa0";
+    if (data === " " && lastData === " ") {
+        data = "\xa0";
+    }
 
-    outLine.push({ cls, data });
+    lastData = data;
+
+    if (gotIndentMarker)
+    {
+        outLine.push({ cls, data, isIndentMarker: gotIndentMarker });
+        gotIndentMarker = false;
+    }
+    else
+        outLine.push({ cls, data });
+    
   }
 }
 
@@ -399,6 +428,9 @@ function handleEscape(str, code) {
       commands = [0];
     }
     handleColorCommand(commands);
+  }
+  if (code == "z" && str[0] === "{") {
+    gotIndentMarker = true;
   }
 }
 

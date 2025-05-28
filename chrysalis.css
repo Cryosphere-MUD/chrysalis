@@ -157,3 +157,104 @@ body {
   background-color: #c0c0c0;
 }
 
+
+.indent_1 {
+        display: inline-block;
+        padding-left: 1ch;
+        text-indent: -1ch;
+}
+.indent_2 {
+        display: inline-block;
+        padding-left: 2ch;
+        text-indent: -2ch;
+}
+.indent_3 {
+        display: inline-block;
+        padding-left: 3ch;
+        text-indent: -3ch;
+}
+.indent_4 {
+        display: inline-block;
+        padding-left: 4ch;
+        text-indent: -4ch;
+}
+.indent_5 {
+        display: inline-block;
+        padding-left: 5ch;
+        text-indent: -5ch;
+}
+.indent_6 {
+        display: inline-block;
+        padding-left: 6ch;
+        text-indent: -6ch;
+}
+.indent_7 {
+        display: inline-block;
+        padding-left: 7ch;
+        text-indent: -7ch;
+}
+.indent_8 {
+        display: inline-block;
+        padding-left: 8ch;
+        text-indent: -8ch;
+}
+.indent_9 {
+        display: inline-block;
+        padding-left: 9ch;
+        text-indent: -9ch;
+}
+.indent_10 {
+        display: inline-block;
+        padding-left: 10ch;
+        text-indent: -10ch;
+}
+.indent_11 {
+        display: inline-block;
+        padding-left: 11ch;
+        text-indent: -11ch;
+}
+.indent_12 {
+        display: inline-block;
+        padding-left: 12ch;
+        text-indent: -12ch;
+}
+.indent_13 {
+        display: inline-block;
+        padding-left: 13ch;
+        text-indent: -13ch;
+}
+.indent_14 {
+        display: inline-block;
+        padding-left: 14ch;
+        text-indent: -14ch;
+}
+.indent_15 {
+        display: inline-block;
+        padding-left: 15ch;
+        text-indent: -15ch;
+}
+.indent_16 {
+        display: inline-block;
+        padding-left: 16ch;
+        text-indent: -16ch;
+}
+.indent_17 {
+        display: inline-block;
+        padding-left: 17ch;
+        text-indent: -17ch;
+}
+.indent_18 {
+        display: inline-block;
+        padding-left: 18ch;
+        text-indent: -18ch;
+}
+.indent_19 {
+        display: inline-block;
+        padding-left: 19ch;
+        text-indent: -19ch;
+}
+.indent_20 {
+        display: inline-block;
+        padding-left: 20ch;
+        text-indent: -20ch;
+}
