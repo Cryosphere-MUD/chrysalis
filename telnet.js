@@ -28,7 +28,7 @@ import { setEcho } from "./command.js";
 
 function encodeIAC(data) {
   const str = [];
-  data.forEach(ch => {
+  data.forEach((ch) => {
     if (ch === IAC) {
       str.push(IAC);
     }
@@ -40,7 +40,7 @@ function encodeIAC(data) {
 function encodeSubNeg(subMode, data) {
   const cmd = [IAC, SB, subMode];
   data = encodeIAC(data);
-  data.forEach(ch => cmd.push(ch));
+  data.forEach((ch) => cmd.push(ch));
   cmd.push(IAC);
   cmd.push(SE);
   return cmd;
@@ -100,17 +100,23 @@ function handleSubnegotiation(subMode, subData) {
     let name;
 
     switch (ttypeCount) {
-        case 0: name = "chrysalis2"; break;
-        case 1: name = "chrysalis2:002_2025-05-06"; break;
-        case 2: default: name = "MTTS " + (MTTS_ANSI | MTTS_UTF8 | MTTS_256 | MTTS_TRUECOLOR);
+      case 0:
+        name = "chrysalis2";
+        break;
+      case 1:
+        name = "chrysalis2:002_2025-05-06";
+        break;
+      case 2:
+      default:
+        name = "MTTS " + (MTTS_ANSI | MTTS_UTF8 | MTTS_256 | MTTS_TRUECOLOR);
     }
 
     ttypeCount++;
 
     for (let idx = 0; idx < name.length; idx += 1) {
-        cmd.push(name.charCodeAt(idx));
+      cmd.push(name.charCodeAt(idx));
     }
-    
+
     cmd.push(IAC);
     cmd.push(SE);
 

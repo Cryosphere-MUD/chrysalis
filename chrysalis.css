@@ -1,73 +1,73 @@
 body {
-	font-family: monospace;
-	background-color: black;
-	color: white
+  font-family: monospace;
+  background-color: black;
+  color: white;
 }
 
 #input {
-	font-family: monospace;
-	background-color: black;
-	color: white
+  font-family: monospace;
+  background-color: black;
+  color: white;
 }
 
 #main {
-	overflow: auto;
-	height: 100%;
+  overflow: auto;
+  height: 100%;
 }
 
 #measure {
-	display: hidden;
-	background-color: black;
-	color: black;
+  display: hidden;
+  background-color: black;
+  color: black;
 }
 
 #wide {
-	display: hidden;
-	background-color: black;
-	color: black;
+  display: hidden;
+  background-color: black;
+  color: black;
 }
 
 #prompt {
-	float: left;
+  float: left;
 }
 
 .link {
-	text-decoration: underline;
+  text-decoration: underline;
 }
 
 .link:hover {
-	text-decoration: underline;
-        color: white;
-        background-color: blue;
+  text-decoration: underline;
+  color: white;
+  background-color: blue;
 }
 
 .cursor {
-	background-color: red;
+  background-color: red;
 }
 
 .term_prop {
-        font-family: sans-serif;
+  font-family: sans-serif;
 }
-      
+
 .term_ital {
-  font-style: italic
+  font-style: italic;
 }
 
 .term_und {
-	text-decoration: underline
+  text-decoration: underline;
 }
 
 .term_over {
-	text-decoration: overline
+  text-decoration: overline;
 }
 
 .term_und2 {
-	text-decoration: underline;
-	text-decoration-style: double;
+  text-decoration: underline;
+  text-decoration-style: double;
 }
 
 .term_str {
-	text-decoration: line-through
+  text-decoration: line-through;
 }
 
 .term_fgblack {
@@ -95,7 +95,8 @@ body {
   color: #e5e5e5;
 }
 
-.term_fggrey, .term_fgblackbold {
+.term_fggrey,
+.term_fgblackbold {
   color: #7f7f7f;
 }
 .term_fgredbold {
@@ -167,104 +168,103 @@ body {
   background-color: #c0c0c0;
 }
 
-
 .indent_1 {
-        display: inline-block;
-        padding-left: 1ch;
-        text-indent: -1ch;
+  display: inline-block;
+  padding-left: 1ch;
+  text-indent: -1ch;
 }
 .indent_2 {
-        display: inline-block;
-        padding-left: 2ch;
-        text-indent: -2ch;
+  display: inline-block;
+  padding-left: 2ch;
+  text-indent: -2ch;
 }
 .indent_3 {
-        display: inline-block;
-        padding-left: 3ch;
-        text-indent: -3ch;
+  display: inline-block;
+  padding-left: 3ch;
+  text-indent: -3ch;
 }
 .indent_4 {
-        display: inline-block;
-        padding-left: 4ch;
-        text-indent: -4ch;
+  display: inline-block;
+  padding-left: 4ch;
+  text-indent: -4ch;
 }
 .indent_5 {
-        display: inline-block;
-        padding-left: 5ch;
-        text-indent: -5ch;
+  display: inline-block;
+  padding-left: 5ch;
+  text-indent: -5ch;
 }
 .indent_6 {
-        display: inline-block;
-        padding-left: 6ch;
-        text-indent: -6ch;
+  display: inline-block;
+  padding-left: 6ch;
+  text-indent: -6ch;
 }
 .indent_7 {
-        display: inline-block;
-        padding-left: 7ch;
-        text-indent: -7ch;
+  display: inline-block;
+  padding-left: 7ch;
+  text-indent: -7ch;
 }
 .indent_8 {
-        display: inline-block;
-        padding-left: 8ch;
-        text-indent: -8ch;
+  display: inline-block;
+  padding-left: 8ch;
+  text-indent: -8ch;
 }
 .indent_9 {
-        display: inline-block;
-        padding-left: 9ch;
-        text-indent: -9ch;
+  display: inline-block;
+  padding-left: 9ch;
+  text-indent: -9ch;
 }
 .indent_10 {
-        display: inline-block;
-        padding-left: 10ch;
-        text-indent: -10ch;
+  display: inline-block;
+  padding-left: 10ch;
+  text-indent: -10ch;
 }
 .indent_11 {
-        display: inline-block;
-        padding-left: 11ch;
-        text-indent: -11ch;
+  display: inline-block;
+  padding-left: 11ch;
+  text-indent: -11ch;
 }
 .indent_12 {
-        display: inline-block;
-        padding-left: 12ch;
-        text-indent: -12ch;
+  display: inline-block;
+  padding-left: 12ch;
+  text-indent: -12ch;
 }
 .indent_13 {
-        display: inline-block;
-        padding-left: 13ch;
-        text-indent: -13ch;
+  display: inline-block;
+  padding-left: 13ch;
+  text-indent: -13ch;
 }
 .indent_14 {
-        display: inline-block;
-        padding-left: 14ch;
-        text-indent: -14ch;
+  display: inline-block;
+  padding-left: 14ch;
+  text-indent: -14ch;
 }
 .indent_15 {
-        display: inline-block;
-        padding-left: 15ch;
-        text-indent: -15ch;
+  display: inline-block;
+  padding-left: 15ch;
+  text-indent: -15ch;
 }
 .indent_16 {
-        display: inline-block;
-        padding-left: 16ch;
-        text-indent: -16ch;
+  display: inline-block;
+  padding-left: 16ch;
+  text-indent: -16ch;
 }
 .indent_17 {
-        display: inline-block;
-        padding-left: 17ch;
-        text-indent: -17ch;
+  display: inline-block;
+  padding-left: 17ch;
+  text-indent: -17ch;
 }
 .indent_18 {
-        display: inline-block;
-        padding-left: 18ch;
-        text-indent: -18ch;
+  display: inline-block;
+  padding-left: 18ch;
+  text-indent: -18ch;
 }
 .indent_19 {
-        display: inline-block;
-        padding-left: 19ch;
-        text-indent: -19ch;
+  display: inline-block;
+  padding-left: 19ch;
+  text-indent: -19ch;
 }
 .indent_20 {
-        display: inline-block;
-        padding-left: 20ch;
-        text-indent: -20ch;
+  display: inline-block;
+  padding-left: 20ch;
+  text-indent: -20ch;
 }

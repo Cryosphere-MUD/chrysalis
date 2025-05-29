@@ -2,7 +2,7 @@ import { handleTelnet, sendSize } from "./telnet.js";
 
 import { getSocket } from "./socket.js";
 
-import { renderOutputData } from "./terminal.js"
+import { renderOutputData } from "./terminal.js";
 
 import { keyDown } from "./command.js";
 
@@ -12,7 +12,7 @@ const wide = document.getElementById("wide");
 
 function updateSize() {
   const fullWidth = wide.offsetWidth;
-  const fullHeight= main.offsetHeight;
+  const fullHeight = main.offsetHeight;
   const lineHeight = measure.offsetHeight;
 
   const width = Math.floor(fullWidth / measure.offsetWidth) - 10;
@@ -30,9 +30,9 @@ function scrollToEnd() {
 
 const ws = getSocket();
 
-ws.onmessage = event => {
+ws.onmessage = (event) => {
   const arr = new Uint8Array(event.data);
-  arr.forEach(ch => handleTelnet(ch));
+  arr.forEach((ch) => handleTelnet(ch));
   renderOutputData();
   scrollToEnd();
 };

@@ -91,13 +91,11 @@ function doEnter() {
   return true;
 }
 
-export function setEditText(newcommand)
-{
+export function setEditText(newcommand) {
   edittext = newcommand;
   editpos = edittext.length;
   updateCommandText();
 }
-
 
 updateCommandText();
 

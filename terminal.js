@@ -1,4 +1,4 @@
-import { sendCommand, setEditText } from "./command.js"
+import { sendCommand, setEditText } from "./command.js";
 
 const output = document.getElementById("output");
 const prompt = document.getElementById("prompt");
@@ -75,28 +75,27 @@ function attrToClassAndStyle(myattr) {
 }
 
 function makeCallback(callback, param) {
-   return function () {
-        callback(param);
-   };
-}    
+  return function () {
+    callback(param);
+  };
+}
 
 function handleURLClick(value) {
-        if (value.startsWith("prompt:")) {
-                let command = decodeURIComponent(value.substring(7));
-                setEditText(command);
-                return;
-        }
-        if (value.startsWith("send:")) {
-                let command = decodeURIComponent(value.substring(5));
-                sendCommand(command);
-                appendCommand(command, true);
-                return;
-        }
-        window.open(value, "_blank");
+  if (value.startsWith("prompt:")) {
+    let command = decodeURIComponent(value.substring(7));
+    setEditText(command);
+    return;
+  }
+  if (value.startsWith("send:")) {
+    let command = decodeURIComponent(value.substring(5));
+    sendCommand(command);
+    appendCommand(command, true);
+    return;
+  }
+  window.open(value, "_blank");
 }
 
 function lineToElements(line) {
-
   let outItem = document.createDocumentFragment();
   let lastClass = {};
 
@@ -107,26 +106,33 @@ function lineToElements(line) {
   let indent;
 
   line.forEach((arg, pos) => {
-        if (arg.isIndentMarker && indent == null) {
-                indent = pos;
-                workingLine = document.createElement('span');
-                workingLine.setAttribute("class", "indent_" + (pos - 1));
-                outItem.appendChild(workingLine);
-        }
+    if (arg.isIndentMarker && indent == null) {
+      indent = pos;
+      workingLine = document.createElement("span");
+      workingLine.setAttribute("class", "indent_" + (pos - 1));
+      outItem.appendChild(workingLine);
+    }
   });
 
-  line.forEach(arg => {
+  line.forEach((arg) => {
     const cls = arg.cls;
 
-    if (cls.class !== lastClass.class || cls.style !== lastClass.style || cls.url !== lastClass.url) {
-        if (currentSpan) {
-                workingLine.appendChild(currentSpan);
-        }
-        currentSpan = document.createElement('span');
-        if (cls.url != null) {
-                currentSpan.addEventListener('click', makeCallback(handleURLClick, cls.url));
-                currentSpan.setAttribute("title", cls.url);
-        }
+    if (
+      cls.class !== lastClass.class ||
+      cls.style !== lastClass.style ||
+      cls.url !== lastClass.url
+    ) {
+      if (currentSpan) {
+        workingLine.appendChild(currentSpan);
+      }
+      currentSpan = document.createElement("span");
+      if (cls.url != null) {
+        currentSpan.addEventListener(
+          "click",
+          makeCallback(handleURLClick, cls.url)
+        );
+        currentSpan.setAttribute("title", cls.url);
+      }
 
       if (cls.class) currentSpan.setAttribute("class", cls.class);
       if (cls.style) currentSpan.setAttribute("style", cls.style);
@@ -148,20 +154,17 @@ let outLine = [];
 let cr = false;
 let outputBatch = [];
 
-function outputData(data)
-{
-  if (data == null)
-  {
-        return;
+function outputData(data) {
+  if (data == null) {
+    return;
   }
   outputBatch.push(data);
 }
 
-export function renderOutputData()
-{
+export function renderOutputData() {
   const frag = document.createDocumentFragment();
   for (let line of outputBatch) {
-     frag.append(line);
+    frag.append(line);
   }
   output.appendChild(frag);
   outputBatch = [];
@@ -190,19 +193,15 @@ function handleChar(data) {
     const cls = attrToClassAndStyle(attr);
 
     if (data === " " /* && lastData === " "*/) {
-        data = "\xa0";
+      data = "\xa0";
     }
 
     lastData = data;
 
-    if (gotIndentMarker)
-    {
-        outLine.push({ cls, data, isIndentMarker: gotIndentMarker });
-        gotIndentMarker = false;
-    }
-    else
-        outLine.push({ cls, data });
-    
+    if (gotIndentMarker) {
+      outLine.push({ cls, data, isIndentMarker: gotIndentMarker });
+      gotIndentMarker = false;
+    } else outLine.push({ cls, data });
   }
 }
 
@@ -216,8 +215,7 @@ function handlePrompt() {
 }
 
 export function appendCommand(command, echo) {
-  if (echo)
-  {
+  if (echo) {
     outputData(lineToElements(promptLine));
     outputData(command);
     outputData(document.createElement("br"));
@@ -227,10 +225,10 @@ export function appendCommand(command, echo) {
 }
 
 function gettruecolor(r, g, b) {
-        let col = "#" + [r, g, b]
-        .map(x => parseInt(x).toString(16).padStart(2, "0"))
-        .join("");
-        return col;
+  let col =
+    "#" +
+    [r, g, b].map((x) => parseInt(x).toString(16).padStart(2, "0")).join("");
+  return col;
 }
 
 function get256(code) {
@@ -301,10 +299,7 @@ function get256(code) {
 
     code = greyCodes[code];
 
-    return "#"
-      .concat(code)
-      .concat(code)
-      .concat(code);
+    return "#".concat(code).concat(code).concat(code);
   }
 
   return "#f8f";
@@ -391,12 +386,16 @@ function handleColorCommand(commands) {
         break;
       case "38":
         if (commands[idx + 1] == "2") {
-                attr.fgcol = gettruecolor(commands[idx + 2], commands[idx + 3], commands[idx + 4]);
-                idx += 4;
+          attr.fgcol = gettruecolor(
+            commands[idx + 2],
+            commands[idx + 3],
+            commands[idx + 4]
+          );
+          idx += 4;
         }
         if (commands[idx + 1] == "5") {
-                attr.fgcol = get256(commands[idx + 2]);
-                idx += 2;
+          attr.fgcol = get256(commands[idx + 2]);
+          idx += 2;
         }
         break;
       case "39":
@@ -428,11 +427,15 @@ function handleColorCommand(commands) {
         break;
       case "48":
         if (commands[idx + 1] == "2") {
-                attr.bgcol = gettruecolor(commands[idx + 2], commands[idx + 3], commands[idx + 4]);
-                idx += 4;
+          attr.bgcol = gettruecolor(
+            commands[idx + 2],
+            commands[idx + 3],
+            commands[idx + 4]
+          );
+          idx += 4;
         }
         if (commands[idx + 1] == "5") {
-                attr.bgcol = get256(commands[idx + 2]);
+          attr.bgcol = get256(commands[idx + 2]);
         }
         idx += 2;
         break;
@@ -477,15 +480,13 @@ function isLetter(str) {
   return str.length === 1 && str.match(/[a-z]/i);
 }
 
-function handleOsc(oscstr)
-{
-        let commands = oscstr.substr(0).split(";");
-        if (commands[0] == '0' || commands[0] == '2')
-                document.title = commands[1]; 
+function handleOsc(oscstr) {
+  let commands = oscstr.substr(0).split(";");
+  if (commands[0] == "0" || commands[0] == "2") document.title = commands[1];
 
-        if (commands[0] == '8') {
-                attr.url = commands[2];
-        }
+  if (commands[0] == "8") {
+    attr.url = commands[2];
+  }
 }
 
 export function handleUnicode(data) {
@@ -495,50 +496,49 @@ export function handleUnicode(data) {
   }
 
   if (mode == OSC_ESC) {
-        if (data == '\\')
-        {
-                handleOsc(escStr);
-                escStr = "";
-                mode = 0;
-                return;
-        }
-        mode = 0;
-        return;
+    if (data == "\\") {
+      handleOsc(escStr);
+      escStr = "";
+      mode = 0;
+      return;
+    }
+    mode = 0;
+    return;
   }
 
   if (mode == OSC) {
-        if (data == ESC) {
-            mode = OSC_ESC;
-            return;
-        }
-        if (data == BEL) {
-            handleOsc(escStr);
-            escStr = "";
-            mode = 0;
-            return;
-        }
-        escStr += data;
-        return;
-      }    
-    
-  if (mode == CSI) {
-    if (isLetter(data)) {
-        handleEscape(escStr, data);
-        mode = 0;
-        escStr = "";
-      }
-      escStr += data;
+    if (data == ESC) {
+      mode = OSC_ESC;
       return;
     }
+    if (data == BEL) {
+      handleOsc(escStr);
+      escStr = "";
+      mode = 0;
+      return;
+    }
+    escStr += data;
+    return;
+  }
+
+  if (mode == CSI) {
+    if (isLetter(data)) {
+      handleEscape(escStr, data);
+      mode = 0;
+      escStr = "";
+    }
+    escStr += data;
+    return;
+  }
 
   if (mode == ESC) {
-   if (data == OSC) {
+    if (data == OSC) {
       mode = OSC;
       escStr = "";
       return;
     }
-    if (data == '[') {
-        mode = CSI;
+    if (data == "[") {
+      mode = CSI;
     }
     escStr += data;
     return;
@@ -571,7 +571,7 @@ export function handleTerminal(data) {
     return;
   }
   utf8fragment += String.fromCharCode(data);
-  try { 
+  try {
     const decoded = utf8.decode(utf8fragment);
     utf8fragment = "";
     handleUnicode(decoded);
