@@ -74,20 +74,20 @@ function attrToClassAndStyle(myattr) {
   return { class: str, style, url: attr.url };
 }
 
-function makeClickHandler(callback, param) {
-        return function () {
-            callback(param);
-        };
-    }    
+function makeCallback(callback, param) {
+   return function () {
+        callback(param);
+   };
+}    
 
-    function myCallback(value) {
+function handleURLClick(value) {
         if (value.startsWith("prompt:")) {
-                let command = value.substring(7);
+                let command = decodeURIComponent(value.substring(7));
                 setEditText(command);
                 return;
         }
         if (value.startsWith("send:")) {
-                let command = value.substring(5);
+                let command = decodeURIComponent(value.substring(5));
                 sendCommand(command);
                 appendCommand(command, true);
                 return;
@@ -124,7 +124,7 @@ function lineToElements(line) {
         }
         currentSpan = document.createElement('span');
         if (cls.url != null) {
-                currentSpan.addEventListener('click', makeClickHandler(myCallback, cls.url));
+                currentSpan.addEventListener('click', makeCallback(handleURLClick, cls.url));
                 currentSpan.setAttribute("title", cls.url);
         }
 
