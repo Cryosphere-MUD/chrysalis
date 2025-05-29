@@ -6,7 +6,7 @@ import { appendCommand } from "./terminal.js";
 
 const command = document.getElementById("command");
 
-function sendCommand(value) {
+export function sendCommand(value) {
   const cmd = [];
 
   for (let idx = 0; idx < value.length; idx += 1) {
@@ -90,6 +90,14 @@ function doEnter() {
   futurecommand = "";
   return true;
 }
+
+export function setEditText(newcommand)
+{
+  edittext = newcommand;
+  editpos = edittext.length;
+  updateCommandText();
+}
+
 
 updateCommandText();
 

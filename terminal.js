@@ -1,3 +1,5 @@
+import { sendCommand, setEditText } from "./command.js"
+
 const output = document.getElementById("output");
 const prompt = document.getElementById("prompt");
 
@@ -66,7 +68,31 @@ function attrToClassAndStyle(myattr) {
   if (attr.str) {
     str += " term_str";
   }
-  return { class: str, style };
+  if (attr.url) {
+    str += " link";
+  }
+  return { class: str, style, url: attr.url };
+}
+
+function makeClickHandler(callback, param) {
+        return function () {
+            callback(param);
+        };
+    }    
+
+    function myCallback(value) {
+        if (value.startsWith("prompt:")) {
+                let command = value.substring(7);
+                setEditText(command);
+                return;
+        }
+        if (value.startsWith("send:")) {
+                let command = value.substring(5);
+                sendCommand(command);
+                appendCommand(command, true);
+                return;
+        }
+        window.open(value, "_blank");
 }
 
 function lineToElements(line) {
@@ -92,11 +118,15 @@ function lineToElements(line) {
   line.forEach(arg => {
     const cls = arg.cls;
 
-    if (cls.class !== lastClass.class || cls.style !== lastClass.style) {
+    if (cls.class !== lastClass.class || cls.style !== lastClass.style || cls.url !== lastClass.url) {
         if (currentSpan) {
                 workingLine.appendChild(currentSpan);
         }
         currentSpan = document.createElement('span');
+        if (cls.url != null) {
+                currentSpan.addEventListener('click', makeClickHandler(myCallback, cls.url));
+                currentSpan.setAttribute("title", cls.url);
+        }
 
       if (cls.class) currentSpan.setAttribute("class", cls.class);
       if (cls.style) currentSpan.setAttribute("style", cls.style);
@@ -159,7 +189,7 @@ function handleChar(data) {
 
     const cls = attrToClassAndStyle(attr);
 
-    if (data === " " && lastData === " ") {
+    if (data === " " /* && lastData === " "*/) {
         data = "\xa0";
     }
 
@@ -453,8 +483,9 @@ function handleOsc(oscstr)
         if (commands[0] == '0' || commands[0] == '2')
                 document.title = commands[1]; 
 
-        if (commands[0] == '8')
-                attr.url = commands[2]
+        if (commands[0] == '8') {
+                attr.url = commands[2];
+        }
 }
 
 export function handleUnicode(data) {

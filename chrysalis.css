@@ -31,6 +31,16 @@ body {
 	float: left;
 }
 
+.link {
+	text-decoration: underline;
+}
+
+.link:hover {
+	text-decoration: underline;
+        color: white;
+        background-color: blue;
+}
+
 .cursor {
 	background-color: red;
 }
