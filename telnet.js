@@ -32,9 +32,9 @@ function encodeIAC(data) {
     if (ch === IAC) {
       str.push(IAC);
     }
-    str.push(data);
+    str.push(ch);
   });
-  return data;
+  return str;
 }
 
 function encodeSubNeg(subMode, data) {
@@ -50,7 +50,7 @@ let currentWidth = 80;
 let currentHeight = 30;
 
 function encodeNAWS() {
-  return encodeSubNeg(TELOPT_NAWS, [0, currentWidth, 0, currentHeight]);
+  return encodeSubNeg(TELOPT_NAWS, [(currentWidth>>8 & 0xff),currentWidth & 0xff, (currentHeight>>8) & 0xff, currentHeight & 0xff]);
 }
 
 let naws = false;
