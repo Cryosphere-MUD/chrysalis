@@ -192,12 +192,6 @@ function handleChar(data) {
 
     const cls = attrToClassAndStyle(attr);
 
-    if (data === " " /* && lastData === " "*/) {
-      data = "\xa0";
-    }
-
-    lastData = data;
-
     if (gotIndentMarker) {
       outLine.push({ cls, data, isIndentMarker: gotIndentMarker });
       gotIndentMarker = false;

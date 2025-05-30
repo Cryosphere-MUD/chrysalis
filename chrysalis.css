@@ -15,6 +15,18 @@ body {
   height: 100%;
 }
 
+#output {
+  white-space: pre-wrap;
+}
+
+#prompt {
+  white-space: pre-wrap;
+}
+
+#command {
+  white-space: pre-wrap;
+}
+
 #measure {
   display: hidden;
   background-color: black;
