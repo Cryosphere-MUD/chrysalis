@@ -23,7 +23,9 @@ import {
 
 import { socketSend } from "./socket.js";
 
-import { handleTerminal, handleTable } from "./terminal.js";
+import { handleTerminal } from "./terminal.js";
+
+import { handleTable } from "./settings.js";
 
 import { setEcho } from "./command.js";
 
@@ -40,7 +42,6 @@ function encodeIAC(data) {
 
 function encodeSubNeg(subMode, data) {
   const cmd = [IAC, SB, subMode];
-  console.log("encodeSubNeg on", data);
   data = encodeIAC(data);
   data.forEach((ch) => cmd.push(ch));
   cmd.push(IAC);

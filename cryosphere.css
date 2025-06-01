@@ -1,0 +1,120 @@
+/* General layout */
+table.cryosphere-framed-table {
+  width: max-content; /* Only as wide as it needs to be */
+  max-width: 100%; /* Prevents it from breaking the layout */
+  table-layout: auto; /* Let browser size columns naturally */
+  border-collapse: collapse;
+  font-family: monospace;
+  background-color: #000;
+  color: #eee;
+  margin-top: 0em;
+  border: 1px solid #0ff;
+  white-space: normal; /* Allow wrapping, but not forced */
+}
+
+.cryosphere-framed-table thead {
+  background-color: #001010;
+}
+
+.cryosphere-framed-table th {
+  border: 1px solid #0ff;
+  padding: 6px 10px;
+  color: #0f0;
+  font-weight: bold;
+  text-align: left;
+  white-space: normal; /* Wrapping allowed */
+}
+
+.cryosphere-framed-table td,
+.cryosphere-framed-table th {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  line-height: 1.2;
+}
+
+.cryosphere-framed-table td {
+  border-top: none;
+  border-bottom: none;
+  border-left: 1px solid #0ff;
+  border-right: 1px solid #0ff;
+  padding: 1px 4px;
+  white-space: normal; /* Wrapping allowed */
+}
+
+.cryosphere-framed-table tr.section-divider td.divider-cell {
+  border-top: 1px solid #0ff;
+  border-left: 1px solid #0ff;
+  border-right: 1px solid #0ff;
+  padding: 0;
+  height: 0;
+  background: transparent;
+}
+
+.cryosphere-framed-table tr.bottomnote-row td.bottomnote {
+  text-align: left;
+  padding: 3px 8px;
+  border-top: none;
+  border-bottom: none;
+}
+
+.heading-line {
+  position: relative;
+  font-weight: bold;
+  color: #ddd;
+  width: 100%; /* span full width */
+  height: 1.2em; /* helps center line */
+}
+
+.heading-line::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid #3366cc;
+  border-bottom: 2px solid #3366cc;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.heading-label {
+  position: relative;
+  background-color: black; /* mask line behind text */
+  padding: 0 0.4em;
+  margin-left: 2em; /* indent just the text */
+  z-index: 1;
+  line-height: 1.2em;
+}
+
+.cryosphere-loose-table {
+  border-collapse: collapse;
+}
+
+.cryosphere-loose-table td {
+  border: none; /* reset first */
+  border-right: 1px solid #3366cc;
+  padding: 0.4em;
+}
+
+/* Remove right border from last column */
+.cryosphere-loose-table tr td:last-child {
+  border-right: none;
+}
+
+/* Remove bottom border from last row */
+.my-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cryosphere-loose-table th {
+  border: none; /* reset first */
+  border-right: 1px solid #3366cc;
+  border-bottom: 1px solid #3366cc;
+  padding: 0.4em;
+}
+
+/* Remove right border from last column */
+.cryosphere-loose-table tr th:last-child {
+  border-right: none;
+}
