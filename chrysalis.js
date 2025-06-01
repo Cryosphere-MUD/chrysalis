@@ -1,6 +1,6 @@
 import { handleTelnet, sendSize } from "./telnet.js";
 
-import { getSocket } from "./socket.js";
+import { getSocket, socketSend } from "./socket.js";
 
 import { renderOutputData } from "./terminal.js";
 

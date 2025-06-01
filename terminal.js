@@ -34,11 +34,11 @@ function attrToClassAndStyle(myattr) {
 
   if (fg[0] === "#") {
     style = "color:";
-    style += attr.fgcol;
+    style += myattr.fgcol;
   } else {
-    if (attr.faint) {
+    if (myattr.faint) {
       str = `term_fg${fg}faint`;
-    } else if (attr.bold) {
+    } else if (myattr.bold) {
       str = `term_fg${fg}bold`;
     } else {
       str = `term_fg${fg}`;
@@ -50,34 +50,42 @@ function attrToClassAndStyle(myattr) {
   } else {
     str += ` term_bg${bg}`;
   }
-  if (attr.prop) {
+  if (myattr.prop) {
     str += " term_prop";
   }
-  if (attr.ital) {
+  if (myattr.ital) {
     str += " term_ital";
   }
-  if (attr.und) {
+  if (myattr.und) {
     str += " term_und";
   }
-  if (attr.over) {
+  if (myattr.over) {
     str += " term_over";
   }
-  if (attr.und2) {
+  if (myattr.und2) {
     str += " term_und2";
   }
-  if (attr.str) {
+  if (myattr.str) {
     str += " term_str";
   }
-  if (attr.url) {
+  if (myattr.url) {
     str += " link";
   }
-  return { class: str, style, url: attr.url };
+  return { class: str, style, url: myattr.url };
 }
 
 function makeCallback(callback, param) {
   return function () {
     callback(param);
   };
+}
+
+function willHandleURL(value)
+{
+        if (value.startsWith("prompt:")) return true;
+        if (value.startsWith("send:")) return true;
+        if (value.startsWith("https://")) return true;
+        if (value.startsWith("http://")) return true;
 }
 
 function handleURLClick(value) {
@@ -92,7 +100,9 @@ function handleURLClick(value) {
     appendCommand(command, true);
     return;
   }
-  window.open(value, "_blank");
+  if (value.startsWith("https://") || value.startsWith("http://")) {
+    window.open(value, "_blank");
+  }
 }
 
 function lineToElements(line) {
@@ -125,6 +135,7 @@ function lineToElements(line) {
       if (currentSpan) {
         workingLine.appendChild(currentSpan);
       }
+
       currentSpan = document.createElement("span");
       if (cls.url != null) {
         currentSpan.addEventListener(
@@ -479,11 +490,13 @@ function handleOsc(oscstr) {
   if (commands[0] == "0" || commands[0] == "2") document.title = commands[1];
 
   if (commands[0] == "8") {
-    attr.url = commands[2];
+    if (commands[2] === "") || willHandleURL(commands[2]) {
+        attr.url = commands[2];
+    }
   }
 }
 
-export function handleUnicode(data) {
+export function handleANSI(data, charHandler=handleChar) {
   if (data === undefined) {
     handlePrompt();
     return;
@@ -550,26 +563,146 @@ export function handleUnicode(data) {
     return;
   }
 
-  handleChar(data);
+  charHandler(data, attr);
 }
 
 let utf8fragment = "";
 
 export function handleTerminal(data) {
   if (data === undefined) {
-    handleUnicode(undefined);
+    handleANSI(undefined);
     return;
   }
   if (data >= 0 && data <= 0x7f) {
-    handleUnicode(String.fromCharCode(data));
+    handleANSI(String.fromCharCode(data));
     return;
   }
   utf8fragment += String.fromCharCode(data);
   try {
     const decoded = utf8.decode(utf8fragment);
     utf8fragment = "";
-    handleUnicode(decoded);
+    handleANSI(decoded);
   } catch (err) {
     // do nothing
   }
+}
+
+function parseANSI(text)
+{
+        const origattr = Object.assign({}, attr);
+        attr = Object.assign({}, defattr);
+
+        let parsedText = "";
+
+        let buffer = [];
+
+        let handler = (data, attr) => {
+                const cls = attrToClassAndStyle(attr);
+                buffer.push({ cls, data });
+                parsedText += data;
+        }
+
+        Array.from(text).forEach(ch => 
+        {
+                handleANSI(ch, handler);
+        });
+
+        if (buffer.length == 0)
+                return document.createDocumentFragment();
+
+        attr = Object.assign({}, origattr);
+
+        return lineToElements(buffer);
+}
+
+export function handleTable(data)
+{
+        let table = document.createElement("table");
+        table.classList.add("gmcp-table");
+        console.log("handleTable", data);
+
+        let headerRow = document.createElement("tr");
+
+        let columns = 0;
+
+        let columnsRight = [];        
+
+        data.header.forEach((cell, idx) => {
+                let newCell = document.createElement("th");
+                newCell.innerText = cell["text"];
+                headerRow.appendChild(newCell);
+                if (cell["align"] === "right")
+                        columnsRight.push(idx);
+                columns = idx + 1;
+        });
+
+        if (data.topnote) {
+                const topRow = document.createElement("tr");
+                topRow.classList.add("topnote-row");
+            
+                const topCell = document.createElement("td");
+                topCell.colSpan = columns;  // Match number of columns
+                topCell.replaceChildren(parseANSI(data.topnote));
+                topCell.classList.add("topnote");
+            
+                topRow.appendChild(topCell);
+                table.appendChild(topRow);  // Add before the headers if needed
+        }
+
+        table.appendChild(headerRow);
+
+        data.data.forEach(
+                (row) => {
+                        if (row) {
+                                let newRow = document.createElement("tr");
+                                row.forEach((cell, idx) => {
+                                        if (!cell)
+                                                return;
+                                        let newCell = document.createElement("td");
+                                        let text = cell["text"];
+                                        if (!text) text = "";
+
+                                        newCell.replaceChildren(parseANSI(text));
+
+                                        if (columnsRight.includes(idx)) {
+                                                newCell.style.textAlign = "right";
+                                        }
+                                        newRow.appendChild(newCell);
+                                });
+                                table.appendChild(newRow);
+                                return;
+                        }
+                        if (row == null) {
+                                const dividerRow = document.createElement("tr");
+                                dividerRow.classList.add("section-divider");
+
+                                for (let i = 0; i < columns; i++) {
+                                        const cell = document.createElement("td");
+                                        cell.classList.add("divider-cell");
+                                        dividerRow.appendChild(cell);
+                                }
+                        
+                                table.appendChild(dividerRow);
+                                return;
+                        }
+                }
+        );
+
+        if (Array.isArray(data.bottomnotes)) {
+                data.bottomnotes.forEach((line, i) => {
+                    const row = document.createElement("tr");
+                    row.classList.add("bottomnote-row");
+            
+                    const cell = document.createElement("td");
+                    cell.colSpan = columns;  // Adjust as needed
+                    cell.classList.add("bottomnote");
+                    cell.replaceChildren(parseANSI(line));
+                    if (i === 0) cell.style.borderTop = "1px solid #0ff";
+            
+                    row.appendChild(cell);
+                    table.appendChild(row);
+                });
+        }
+                    
+        output.appendChild(table);
 }

@@ -18,11 +18,12 @@ import {
   MTTS_UTF8,
   MTTS_256,
   MTTS_TRUECOLOR,
+  TELOPT_GMCP,
 } from "./telnetconstants.js";
 
 import { socketSend } from "./socket.js";
 
-import { handleTerminal } from "./terminal.js";
+import { handleTerminal, handleTable } from "./terminal.js";
 
 import { setEcho } from "./command.js";
 
@@ -39,11 +40,21 @@ function encodeIAC(data) {
 
 function encodeSubNeg(subMode, data) {
   const cmd = [IAC, SB, subMode];
+  console.log("encodeSubNeg on", data);
   data = encodeIAC(data);
   data.forEach((ch) => cmd.push(ch));
   cmd.push(IAC);
   cmd.push(SE);
   return cmd;
+}
+
+function encodeGMCP(gmcpPackage, data) {
+  return encodeSubNeg(
+    TELOPT_GMCP,
+    Array.from(gmcpPackage + " " + JSON.stringify(data), (char) =>
+      char.charCodeAt(0)
+    )
+  );
 }
 
 let currentWidth = 80;
@@ -87,43 +98,103 @@ function handleNegotiation(state, code) {
     socketSend([IAC, DO, TELOPT_EOR]);
     return;
   }
-
-  console.log("IAC ", state, code);
+  if (state === WILL && code === TELOPT_GMCP) {
+    socketSend([IAC, DO, TELOPT_GMCP]);
+    socketSend(
+      encodeGMCP("Core.Hello", { client: "Chrysalis", version: "2025.06.01" })
+    );
+    socketSend(encodeGMCP("Core.Supports.Set", ["Client.Table 1"]));
+    return;
+  }
 }
 
 let ttypeCount = 0;
 
-function handleSubnegotiation(subMode, subData) {
-  if (subMode === TTYPE && subData.length === 1 && subData[0] === SEND) {
-    const cmd = [IAC, SB, TTYPE, IS];
-
-    let name;
-
-    switch (ttypeCount) {
-      case 0:
-        name = "chrysalis2";
-        break;
-      case 1:
-        name = "chrysalis2:002_2025-05-06";
-        break;
-      case 2:
-      default:
-        name = "MTTS " + (MTTS_ANSI | MTTS_UTF8 | MTTS_256 | MTTS_TRUECOLOR);
+function indexOfAny(str, chars) {
+  for (let i = 0; i < str.length; i++) {
+    if (chars.includes(str[i])) {
+      return i;
     }
+  }
+  return -1;
+}
 
-    ttypeCount++;
+function parseGMCP(byteArray) {
+  const text = new TextDecoder("utf-8").decode(new Uint8Array(byteArray));
 
-    for (let idx = 0; idx < name.length; idx += 1) {
-      cmd.push(name.charCodeAt(idx));
-    }
+  const splitAt = indexOfAny(text, "[{");
 
-    cmd.push(IAC);
-    cmd.push(SE);
-
-    return cmd;
+  if (splitAt === -1) {
+    return { package: text.trim(), payload: null };
   }
 
-  return [];
+  const packageName = text.slice(0, splitAt).trim();
+  const payloadText = text.slice(splitAt).trim();
+
+  let payload;
+  try {
+    payload = JSON.parse(payloadText);
+  } catch (e) {
+    console.warn("Failed to parse GMCP payload:", payloadText);
+    payload = null;
+  }
+
+  return { package: packageName, payload };
+}
+
+function handleGMCP(gmcp) {
+  if (gmcp.package == "Client.Table 1") {
+    handleTable(gmcp.payload);
+  }
+}
+
+function handleTType(subData) {
+  if (subData.length !== 1 || subData[0] !== SEND) {
+    return [];
+  }
+
+  const cmd = [IAC, SB, TTYPE, IS];
+
+  let name;
+
+  switch (ttypeCount) {
+    case 0:
+      name = "chrysalis2";
+      break;
+    case 1:
+      name = "chrysalis2:002_2025-05-06";
+      break;
+    case 2:
+    default:
+      name = "MTTS " + (MTTS_ANSI | MTTS_UTF8 | MTTS_256 | MTTS_TRUECOLOR);
+  }
+
+  ttypeCount++;
+
+  for (let idx = 0; idx < name.length; idx += 1) {
+    cmd.push(name.charCodeAt(idx));
+  }
+
+  cmd.push(IAC);
+  cmd.push(SE);
+
+  return cmd;
+}
+
+function handleSubnegotiation(subMode, subData) {
+  try {
+    if (subMode === TELOPT_GMCP) {
+      handleGMCP(parseGMCP(subData));
+      return [];
+    }
+
+    if (subMode === TTYPE) {
+      return handleTType(subData);
+    }
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
 }
 
 let telnetState = 0;
