@@ -16,7 +16,12 @@ Technically this is chrysalis2, which is why it identifies itself as such
 in TTYPE. The original iteration was AJAX based and had the misfortune to
 have been developed a couple of years before WebSocket was standardised.
 
+It's currently not really useful on a phone because of the way it doesn't
+use a standard <input> control. I think I might just make it use one on
+phones rather than try and be clever and use a hidden one, since they're
+not going to get the benefit of our readline()-like functionality anyway.
+
 Medium term goals for the client include making it implement more relevant
-TELNET and terminal features (CHARSET, MTTS, OSC8 and TrueColor are on the
-list). Long terms goals will involve interpreting metadata in order to
-do more client-side layout.
+TELNET and terminal features (MTTS, OSC8 and TrueColor have now been done
+and CHARSET is next on the list). Longer terms goals will involve interpreting
+metadata in order to do more client-side layout.
