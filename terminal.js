@@ -89,12 +89,12 @@ function willHandleURL(value) {
 
 function handleURLClick(value) {
   if (value.startsWith("prompt:")) {
-    let command = decodeURIComponent(value.substring(7));
+    let command = decodeURIComponent(value.slice(7));
     setEditText(command);
     return;
   }
   if (value.startsWith("send:")) {
-    let command = decodeURIComponent(value.substring(5));
+    let command = decodeURIComponent(value.slice(5));
     sendCommand(command);
     appendCommand(command, true);
     return;
@@ -460,7 +460,7 @@ function handleColorCommand(commands) {
 
 function handleEscape(str, code) {
   if (code === "m" && str[0] === "[") {
-    let commands = str.substr(1).split(";");
+    let commands = str.slice(1).split(";");
     if (commands.length === 0) {
       commands = [0];
     }
@@ -485,7 +485,7 @@ function isLetter(str) {
 }
 
 function handleOsc(oscstr) {
-  let commands = oscstr.substr(0).split(";");
+  let commands = oscstr.slice(0).split(";");
   if (commands[0] == "0" || commands[0] == "2") document.title = commands[1];
 
   if (commands[0] == "8") {
