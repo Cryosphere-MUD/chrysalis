@@ -104,7 +104,7 @@ export function keyDown(event) {
     doEnter();
   } else if (event.key === "Backspace") {
     if (editpos > 0) {
-      edittext = edittext.substr(0, editpos - 1) + edittext.substr(editpos);
+      edittext = edittext.slice(0, editpos - 1) + edittext.slice(editpos);
       editpos -= 1;
     }
   } else if (event.key === "ArrowLeft") {
@@ -126,13 +126,13 @@ export function keyDown(event) {
     !event.metaKey
   ) {
     edittext =
-      edittext.substr(0, editpos) + event.key + edittext.substr(editpos);
+      edittext.slice(0, editpos) + event.key + edittext.slice(editpos);
     editpos += 1;
   } else if (event.key === "c" && event.ctrlKey) {
     editpos = 0;
     edittext = "";
   } else if (event.key === "k" && event.ctrlKey) {
-    edittext = edittext(0, editpos);
+    edittext = edittext.slice(0, editpos);
   } else if (event.key === "Home" || (event.key === "a" && event.ctrlKey)) {
     editpos = 0;
   } else if (event.key === "End" || (event.key === "e" && event.ctrlKey)) {
