@@ -29,6 +29,24 @@ import { handleTable } from "./settings.js";
 
 import { setEcho } from "./command.js";
 
+/* not actually part of the telnet stack, but information from the terminal */
+let currentWidth = 80;
+let currentHeight = 30;
+
+let naws = false;
+let ttypeCount = 0;
+let telnetState = 0;
+let subMode = 0;
+let subData = [];
+
+export function resetTelnet() {
+  naws = false;
+  ttypeCount = 0;
+  telnetState = 0;
+  subMode = 0;
+  subData = [];
+}
+
 function encodeIAC(data) {
   const str = [];
   data.forEach((ch) => {
@@ -58,14 +76,14 @@ function encodeGMCP(gmcpPackage, data) {
   );
 }
 
-let currentWidth = 80;
-let currentHeight = 30;
-
 function encodeNAWS() {
-  return encodeSubNeg(TELOPT_NAWS, [(currentWidth>>8 & 0xff),currentWidth & 0xff, (currentHeight>>8) & 0xff, currentHeight & 0xff]);
+  return encodeSubNeg(TELOPT_NAWS, [
+    (currentWidth >> 8) & 0xff,
+    currentWidth & 0xff,
+    (currentHeight >> 8) & 0xff,
+    currentHeight & 0xff,
+  ]);
 }
-
-let naws = false;
 
 export function sendSize(width, height) {
   currentWidth = width;
@@ -108,8 +126,6 @@ function handleNegotiation(state, code) {
     return;
   }
 }
-
-let ttypeCount = 0;
 
 function indexOfAny(str, chars) {
   for (let i = 0; i < str.length; i++) {
@@ -197,10 +213,6 @@ function handleSubnegotiation(subMode, subData) {
     return [];
   }
 }
-
-let telnetState = 0;
-let subMode = 0;
-let subData = [];
 
 export function handleTelnet(data) {
   if (telnetState === 0 && data === IAC) {

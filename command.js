@@ -97,6 +97,10 @@ export function setEditText(newcommand) {
   updateCommandText();
 }
 
+export function resetCommand() {
+  setEditText("");
+}
+
 updateCommandText();
 
 export function keyDown(event) {
@@ -125,8 +129,7 @@ export function keyDown(event) {
     !event.altKey &&
     !event.metaKey
   ) {
-    edittext =
-      edittext.slice(0, editpos) + event.key + edittext.slice(editpos);
+    edittext = edittext.slice(0, editpos) + event.key + edittext.slice(editpos);
     editpos += 1;
   } else if (event.key === "c" && event.ctrlKey) {
     editpos = 0;
