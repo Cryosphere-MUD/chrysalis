@@ -22,4 +22,3 @@ export const MTTS_ANSI = 1;
 export const MTTS_UTF8 = 4;
 export const MTTS_256 = 8;
 export const MTTS_TRUECOLOR = 256;
-

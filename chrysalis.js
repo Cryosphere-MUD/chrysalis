@@ -1,14 +1,16 @@
-import { handleTelnet, sendSize } from "./telnet.js";
+import { handleTelnet, sendSize, resetTelnet } from "./telnet.js";
 
-import { getSocket, socketSend } from "./socket.js";
+import { socketConnect } from "./socket.js";
 
-import { renderOutputData } from "./terminal.js";
+import { injectText, renderOutputData, resetANSIState } from "./terminal.js";
 
-import { keyDown } from "./command.js";
+import { keyDown, resetCommand } from "./command.js";
 
 const main = document.getElementById("main");
 const measure = document.getElementById("measure");
 const wide = document.getElementById("wide");
+const reconnect = document.getElementById("reconnect");
+const command = document.getElementById("command");
 
 function updateSize() {
   const fullWidth = wide.offsetWidth;
@@ -28,13 +30,46 @@ function scrollToEnd() {
   main.scrollTop = main.scrollHeight;
 }
 
-const ws = getSocket();
+let connected = false;
 
-ws.onmessage = (event) => {
-  const arr = new Uint8Array(event.data);
-  arr.forEach((ch) => handleTelnet(ch));
-  renderOutputData();
-  scrollToEnd();
+function handleConnect(e) {
+  connected = true;
+  injectText(["/// connected to remote server"]);
+  resetCommand();
+  command.style.display = "inline";
+  reconnect.style.display = "none";
+}
+
+function handleDisconnect(e) {
+  connected = false;
+  injectText(["/// connection closed by remote server"]);
+  command.style.display = "none";
+  reconnect.style.display = "inline";
+  resetTelnet();
+  resetANSIStatus();
+}
+
+function connect() {
+  const ws = socketConnect();
+  ws.onmessage = (event) => {
+    const arr = new Uint8Array(event.data);
+    arr.forEach((ch) => handleTelnet(ch));
+    renderOutputData();
+    scrollToEnd();
+  };
+  ws.onopen = handleConnect;
+  ws.onerror = handleDisconnect;
+  ws.onclose = handleDisconnect;
+}
+
+function handleKeyDown(event) {
+  if (connected) keyDown(event);
+}
+
+window.onkeydown = handleKeyDown;
+
+reconnect.onclick = () => {
+  connect();
 };
 
-window.onkeydown = keyDown;
+connect();

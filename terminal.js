@@ -1,5 +1,11 @@
 import { sendCommand, setEditText } from "./command.js";
 
+const ESC = "\x1B";
+const CSI = "\x9B";
+const BEL = "\x07";
+const OSC = "]";
+const OSC_ESC = "]\x1b";
+
 const output = document.getElementById("output");
 const prompt = document.getElementById("prompt");
 
@@ -18,6 +24,34 @@ let attr = {
   prop: false,
   url: null,
 };
+
+const defattr = Object.assign({}, attr);
+
+let outLine = [];
+let cr = false;
+let outputBatch = [];
+
+let lastData;
+
+let gotIndentMarker = false;
+
+let promptLine;
+
+let mode = 0;
+let escStr = "";
+
+let utf8fragment = "";
+
+export function resetANSIState() {
+  outLine = [];
+  cr = false;
+  outputBack = [];
+  lastData = undefined;
+  gotIndentMarker = false;
+  promptLint = false;
+  mode = 0;
+  escStr = "";
+}
 
 function attrToClassAndStyle(myattr) {
   let str = "";
@@ -160,10 +194,6 @@ function lineToElements(line) {
   return;
 }
 
-let outLine = [];
-let cr = false;
-let outputBatch = [];
-
 function outputData(data) {
   if (data == null) {
     return;
@@ -179,10 +209,6 @@ export function renderOutputData() {
   output.appendChild(frag);
   outputBatch = [];
 }
-
-let lastData;
-
-let gotIndentMarker = false;
 
 function handleChar(data) {
   if (data === "\r") {
@@ -209,8 +235,6 @@ function handleChar(data) {
   }
 }
 
-let promptLine;
-
 function handlePrompt() {
   promptLine = outLine;
   let promptElements = lineToElements(outLine);
@@ -226,6 +250,12 @@ export function appendCommand(command, echo) {
     renderOutputData();
   }
   prompt.replaceChildren();
+}
+
+export function injectText(text) {
+  outputData(text);
+  outputData(document.createElement("br"));
+  renderOutputData();
 }
 
 function gettruecolor(r, g, b) {
@@ -308,8 +338,6 @@ function get256(code) {
 
   return "#f8f";
 }
-
-const defattr = Object.assign({}, attr);
 
 function handleColorCommand(commands) {
   for (let idx = 0; idx < commands.length; idx += 1) {
@@ -471,15 +499,6 @@ function handleEscape(str, code) {
   }
 }
 
-let mode = 0;
-let escStr = "";
-
-const ESC = "\x1B";
-const CSI = "\x9B";
-const BEL = "\x07";
-const OSC = "]";
-const OSC_ESC = "]\x1b";
-
 function isLetter(str) {
   return str.length === 1 && str.match(/[a-z]/i);
 }
@@ -564,8 +583,6 @@ export function handleANSI(data, charHandler = handleChar) {
 
   charHandler(data, attr);
 }
-
-let utf8fragment = "";
 
 export function handleTerminal(data) {
   if (data === undefined) {
