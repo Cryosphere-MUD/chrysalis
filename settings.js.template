@@ -1,5 +1,0 @@
-export const url = "ws://localhost:8080/"; // fill in with the details of your websocket-to-telnet server here
-
-import { handleTable } from "./cryosphere.js";
-
-export { handleTable };
