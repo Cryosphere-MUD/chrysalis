@@ -45,10 +45,10 @@ let utf8fragment = "";
 export function resetANSIState() {
   outLine = [];
   cr = false;
-  outputBack = [];
+  outputBatch = [];
   lastData = undefined;
   gotIndentMarker = false;
-  promptLint = false;
+  promptLine = false;
   mode = 0;
   escStr = "";
 }

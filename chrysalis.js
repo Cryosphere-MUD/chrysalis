@@ -10,7 +10,9 @@ const main = document.getElementById("main");
 const measure = document.getElementById("measure");
 const wide = document.getElementById("wide");
 const reconnect = document.getElementById("reconnect");
+const onmobile = document.getElementById("onmobile");
 const command = document.getElementById("command");
+const capture = document.getElementById("keyboard-capture");
 
 function updateSize() {
   const fullWidth = wide.offsetWidth;
@@ -38,15 +40,17 @@ function handleConnect(e) {
   resetCommand();
   command.style.display = "inline";
   reconnect.style.display = "none";
+  onmobile.style.display = "block";
 }
 
 function handleDisconnect(e) {
   connected = false;
   injectText(["/// connection closed by remote server"]);
   command.style.display = "none";
+  onmobile.style.display = "none";
   reconnect.style.display = "inline";
   resetTelnet();
-  resetANSIStatus();
+  resetANSIState();
 }
 
 function connect() {
@@ -73,3 +77,9 @@ reconnect.onclick = () => {
 };
 
 connect();
+
+onmobile.onclick = () => {
+        onmobile.style.display = "none";
+        capture.style.display = "block";
+}
+
