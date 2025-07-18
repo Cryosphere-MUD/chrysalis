@@ -7,6 +7,8 @@ import { appendCommand } from "./terminal.js";
 const command = document.getElementById("command");
 
 export function sendCommand(value) {
+  value = utf8.encode(value);
+
   const cmd = [];
 
   for (let idx = 0; idx < value.length; idx += 1) {
@@ -103,33 +105,64 @@ export function resetCommand() {
 
 updateCommandText();
 
-export function keyDown(event) {
-  const hasSelection = window.getSelection().toString().length > 0;
+const keyHandlers = 
+{
+        "Enter": doEnter,
+        "Backspace": () => {
+                if (editpos > 0) {
+                  edittext = edittext.slice(0, editpos - 1) + edittext.slice(editpos);
+                  editpos -= 1;
+                }
+              },
+        "Delete": () => {
+                if (editpos < edittext.length) {
+                   edittext = edittext.slice(0, editpos) + edittext.slice(editpos + 1);
+                }
+              },
+        "ArrowLeft": () => {
+                if (editpos > 0) {
+                        editpos -= 1;
+                }
+        },
+        "ArrowRight": () => {
+                if (editpos < edittext.length) {
+                        editpos += 1;
+                }
+        },
+        "ArrowUp": doHistoryPrev,
+        "ArrowDown": doHistoryNext,
+        "Control-A": () => { editpos = 0},
+        "Control-E": () => { editpos = edittext.length; },
+        "Control-K": () => { edittext = edittext.slice(0, editpos); },
+        "Control-C": () => {
+                if (window.getSelection().toString().length > 0) {
+                        return false;
+                }
+                editpos = 0;
+                edittext = "";            
+        },
+        "Home": () => { editpos = 0},
+        "End": () => { editpos = edittext.length; },
+};
 
-  if (event.key === "Enter") {
-    doEnter();
-  } else if (event.key === "Backspace") {
-    if (editpos > 0) {
-      edittext = edittext.slice(0, editpos - 1) + edittext.slice(editpos);
-      editpos -= 1;
-    }
-  } else if (event.key === "Delete") {
-    if (editpos < edittext.length) {
-       edittext = edittext.slice(0, editpos) + edittext.slice(editpos + 1);
-    }
-  } else if (event.key === "ArrowLeft") {
-    if (editpos > 0) {
-      editpos -= 1;
-    }
-  } else if (event.key === "ArrowRight") {
-    if (editpos < edittext.length) {
-      editpos += 1;
-    }
-  } else if (event.key === "ArrowUp") {
-    doHistoryPrev();
-  } else if (event.key === "ArrowDown") {
-    doHistoryNext();
-  } else if (
+export function keyDown(event) {
+  let keyname = event.key;
+  if (event.ctrlKey)
+  {
+        keyname = "Control-" + keyname.toUpperCase();
+  }
+
+  if (keyHandlers[keyname] != null)
+  {
+        if (keyHandlers[keyname]() !== false)
+        {
+                event.preventDefault();
+                updateCommandText();
+                return;
+        }
+  }
+
+  if (
     event.key.length === 1 &&
     !event.ctrlKey &&
     !event.altKey &&
@@ -137,21 +170,9 @@ export function keyDown(event) {
   ) {
     edittext = edittext.slice(0, editpos) + event.key + edittext.slice(editpos);
     editpos += 1;
-  } else if (!hasSelection && event.key === "c" && event.ctrlKey) {
-    editpos = 0;
-    edittext = "";
-  } else if (event.key === "k" && event.ctrlKey) {
-    edittext = edittext.slice(0, editpos);
-  } else if (event.key === "Home" || (event.key === "a" && event.ctrlKey)) {
-    editpos = 0;
-  } else if (event.key === "End" || (event.key === "e" && event.ctrlKey)) {
-    editpos = edittext.length;
-  } else {
-    return;
+    event.preventDefault();
+    updateCommandText();
   }
-
-  event.preventDefault();
-  updateCommandText();
 }
 
 export function paste(event) {

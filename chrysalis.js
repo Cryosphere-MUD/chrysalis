@@ -2,7 +2,7 @@ import { handleTelnet, sendSize, resetTelnet } from "./telnet.js";
 
 import { socketConnect } from "./socket.js";
 
-import { injectText, renderOutputData, resetANSIState } from "./terminal.js";
+import { injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
 
 import { paste, keyDown, resetCommand } from "./command.js";
 
@@ -27,10 +27,6 @@ function updateSize() {
 window.addEventListener("resize", updateSize);
 
 updateSize();
-
-function scrollToEnd() {
-  main.scrollTop = main.scrollHeight;
-}
 
 let connected = false;
 
@@ -58,8 +54,8 @@ function connect() {
   ws.onmessage = (event) => {
     const arr = new Uint8Array(event.data);
     arr.forEach((ch) => handleTelnet(ch));
-    renderOutputData();
-    scrollToEnd();
+    if (renderOutputData())
+        scrollToEnd();
   };
   ws.onopen = handleConnect;
   ws.onerror = handleDisconnect;

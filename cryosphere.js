@@ -1,4 +1,4 @@
-import { parseANSI } from "./terminal.js";
+import { parseANSI, scrollToEnd } from "./terminal.js";
 
 export function handleTable(data) {
   let table = document.createElement("table");
@@ -106,4 +106,6 @@ export function handleTable(data) {
     div.classList.add("heading-line");
     output.appendChild(div);
   }
+  
+  scrollToEnd()
 }
