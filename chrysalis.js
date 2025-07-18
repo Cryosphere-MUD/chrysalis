@@ -4,7 +4,7 @@ import { socketConnect } from "./socket.js";
 
 import { injectText, renderOutputData, resetANSIState } from "./terminal.js";
 
-import { keyDown, resetCommand } from "./command.js";
+import { paste, keyDown, resetCommand } from "./command.js";
 
 const main = document.getElementById("main");
 const measure = document.getElementById("measure");
@@ -70,7 +70,12 @@ function handleKeyDown(event) {
   if (connected) keyDown(event);
 }
 
+function handlePaste(event) {
+        if (connected) paste(event);
+}
+      
 window.onkeydown = handleKeyDown;
+window.addEventListener('paste', handlePaste);
 
 reconnect.onclick = () => {
   connect();
