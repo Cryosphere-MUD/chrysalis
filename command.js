@@ -104,12 +104,18 @@ export function resetCommand() {
 updateCommandText();
 
 export function keyDown(event) {
+  const hasSelection = window.getSelection().toString().length > 0;
+
   if (event.key === "Enter") {
     doEnter();
   } else if (event.key === "Backspace") {
     if (editpos > 0) {
       edittext = edittext.slice(0, editpos - 1) + edittext.slice(editpos);
       editpos -= 1;
+    }
+  } else if (event.key === "Delete") {
+    if (editpos < edittext.length) {
+       edittext = edittext.slice(0, editpos) + edittext.slice(editpos + 1);
     }
   } else if (event.key === "ArrowLeft") {
     if (editpos > 0) {
@@ -131,7 +137,7 @@ export function keyDown(event) {
   ) {
     edittext = edittext.slice(0, editpos) + event.key + edittext.slice(editpos);
     editpos += 1;
-  } else if (event.key === "c" && event.ctrlKey) {
+  } else if (!hasSelection && event.key === "c" && event.ctrlKey) {
     editpos = 0;
     edittext = "";
   } else if (event.key === "k" && event.ctrlKey) {
@@ -144,6 +150,14 @@ export function keyDown(event) {
     return;
   }
 
+  event.preventDefault();
+  updateCommandText();
+}
+
+export function paste(event) {
+  const text = (event.clipboardData || window.clipboardData).getData('text');
+  edittext = edittext.slice(0, editpos) + text + edittext.slice(editpos);
+  editpos += text.length;
   event.preventDefault();
   updateCommandText();
 }

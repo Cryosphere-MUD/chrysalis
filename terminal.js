@@ -243,8 +243,8 @@ function handlePrompt() {
 }
 
 export function appendCommand(command, echo) {
+  outputData(lineToElements(promptLine));
   if (echo) {
-    outputData(lineToElements(promptLine));
     outputData(command);
     outputData(document.createElement("br"));
     renderOutputData();
