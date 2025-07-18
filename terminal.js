@@ -202,12 +202,15 @@ function outputData(data) {
 }
 
 export function renderOutputData() {
+  if (outputBatch.length == 0)
+        return false;
   const frag = document.createDocumentFragment();
   for (let line of outputBatch) {
     frag.append(line);
   }
   output.appendChild(frag);
   outputBatch = [];
+  return true;
 }
 
 function handleChar(data) {
@@ -250,6 +253,11 @@ export function appendCommand(command, echo) {
     renderOutputData();
   }
   prompt.replaceChildren();
+  scrollToEnd()
+}
+
+export function scrollToEnd() {
+  main.scrollTop = main.scrollHeight;
 }
 
 export function injectText(text) {
