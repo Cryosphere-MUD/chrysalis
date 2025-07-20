@@ -1,5 +1,11 @@
 import { url } from "./settings.js";
 
+import { FramedSocket } from "./FramedSocket.js"
+
+function isIPhone() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
 let ws;
 
 export function socketSend(arr) {
@@ -10,7 +16,7 @@ export function socketSend(arr) {
 }
 
 export function socketConnect() {
-  ws = new WebSocket(url);
+  ws = new FramedSocket(url);
   if (ws) {
     ws.binaryType = "arraybuffer";
   }
