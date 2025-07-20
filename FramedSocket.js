@@ -55,6 +55,9 @@ export class FramedSocket {
     }
 
     scheduleReconnect() {
+        if (!this.apparentOpenness)
+                return;
+
         this.reconnectAttempts++;
 
         if (this.reconnectAttempts > this.maxReconnectAttempts)
@@ -107,12 +110,17 @@ export class FramedSocket {
                 payload.byteOffset,
                 payload.byteOffset + payload.byteLength
             );
-           if (this.onmessage) this.onmessage({data: ab});
+            if (this.onmessage) this.onmessage({data: ab});
+            // Send an ACK control frame
+            this.sendControl({ "ack": this.byteCount });
         } else if (type === 0x01) {
             try {
                 const msg = JSON.parse(new TextDecoder().decode(payload));
                 if (msg.session) this.sessionToken = msg.session;
-                if (msg.error && this.onclose) this.onclose();
+                if (msg.error) {
+                        this.apparentOpenness = false;
+                        if (this.onclose) this.onclose();
+                }
                 if (this.onControl) this.onControl(msg);
             } catch (e) {
                 console.error("[FramedSocket] Invalid control frame:", e);
@@ -121,13 +129,21 @@ export class FramedSocket {
             console.warn("[FramedSocket] Unknown frame type:", type);
         }
     }
-
+    
     send(data) {
-        // data is Uint8Array or string
         if (typeof data === "string") {
             data = new TextEncoder().encode(data);
         }
-        this._sendFrame(0x00, data);
+    
+        const MAX_CHUNK = 0xFFFF; // 65535 bytes, fits 2-byte length field
+        let offset = 0;
+    
+        while (offset < data.length) {
+            const chunkLen = Math.min(MAX_CHUNK, data.length - offset);
+            const chunk = data.subarray(offset, offset + chunkLen);
+            this._sendFrame(0x00, chunk);
+            offset += chunkLen;
+        }
     }
 
     sendControl(obj) {
