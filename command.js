@@ -15,8 +15,8 @@ export function sendCommand(value) {
     cmd.push(value.charCodeAt(idx));
   }
 
-  cmd.push(10);
   cmd.push(13);
+  cmd.push(10);
 
   socketSend(cmd);
 }
