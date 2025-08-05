@@ -1,3 +1,6 @@
 [submodule "utf8.js"]
 	path = utf8.js
 	url = https://github.com/mathiasbynens/utf8.js
+[submodule "lifeline"]
+	path = lifeline
+	url = https://github.com/Cryosphere-MUD/lifeline
