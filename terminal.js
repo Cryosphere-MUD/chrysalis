@@ -139,6 +139,9 @@ function handleURLClick(value) {
 }
 
 function lineToElements(line) {
+  if (!line)
+        return;
+
   let outItem = document.createDocumentFragment();
   let lastClass = {};
 
@@ -240,8 +243,11 @@ function handleChar(data) {
 
 function handlePrompt() {
   promptLine = outLine;
-  let promptElements = lineToElements(outLine);
-  prompt.replaceChildren(promptElements);
+  const promptElements = lineToElements(outLine);
+  if (promptElements)
+        prompt.replaceChildren(promptElements);
+  else
+        prompt.innerHTML = "";
   outLine = [];
 }
 

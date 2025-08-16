@@ -1,10 +1,12 @@
-import { handleTelnet, sendSize, resetTelnet } from "./telnet.js";
+import { handleTelnet, negotiated, sendSize, resetTelnet } from "./telnet.js";
 
 import { socketConnect } from "./socket.js";
 
-import { injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
+import { handleTerminal, injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
 
 import { paste, keyDown, resetCommand } from "./command.js";
+
+import { TELOPT_EOR } from "./telnetconstants.js";
 
 const main = document.getElementById("main");
 const measure = document.getElementById("measure");
@@ -54,6 +56,8 @@ function connect() {
   ws.onmessage = (event) => {
     const arr = new Uint8Array(event.data);
     arr.forEach((ch) => handleTelnet(ch));
+    if (!negotiated(TELOPT_EOR))
+        handleTerminal();
     if (renderOutputData())
         scrollToEnd();
   };
