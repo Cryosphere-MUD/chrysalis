@@ -25,7 +25,7 @@ import { socketSend } from "./socket.js";
 
 import { handleTerminal } from "./terminal.js";
 
-import { handleTable } from "./settings.js";
+import { settings } from "./settings.js";
 
 import { setEcho } from "./command.js";
 
@@ -93,6 +93,13 @@ export function sendSize(width, height) {
   }
 }
 
+let modes = {};
+
+export function negotiated(option)
+{
+        return modes[option];
+}
+
 function handleNegotiation(state, code) {
   if (state === WILL && code === ECHO) {
     setEcho(false);
@@ -114,6 +121,7 @@ function handleNegotiation(state, code) {
     return;
   }
   if (state === WILL && code === TELOPT_EOR) {
+    modes[TELOPT_EOR] = WILL;
     socketSend([IAC, DO, TELOPT_EOR]);
     return;
   }
@@ -160,8 +168,8 @@ function parseGMCP(byteArray) {
 }
 
 function handleGMCP(gmcp) {
-  if (gmcp.package == "Client.Table 1") {
-    handleTable(gmcp.payload);
+  if (settings.handleTable && gmcp.package == "Client.Table 1") {
+    settings.handleTable(gmcp.payload);
   }
 }
 

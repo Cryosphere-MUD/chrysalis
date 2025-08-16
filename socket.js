@@ -1,4 +1,4 @@
-import { url } from "./settings.js";
+import { settings } from "./settings.js";
 
 let ws;
 
@@ -10,7 +10,7 @@ export function socketSend(arr) {
 }
 
 export function socketConnect() {
-  ws = new WebSocket(url);
+  ws = new WebSocket(settings.url);
   if (ws) {
     ws.binaryType = "arraybuffer";
   }
