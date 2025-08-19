@@ -68,7 +68,7 @@ function attrToClassAndStyle(myattr) {
 
   if (fg[0] === "#") {
     style = "color:";
-    style += myattr.fgcol;
+    style += fg;
   } else {
     if (myattr.faint) {
       str = `term_fg${fg}faint`;
@@ -78,12 +78,17 @@ function attrToClassAndStyle(myattr) {
       str = `term_fg${fg}`;
     }
   }
+
   if (bg[0] === "#") {
-    style = "background-color:";
+    if (style.length)
+      style += ";";
+    
+    style += "background-color:";
     style += bg;
   } else {
     str += ` term_bg${bg}`;
   }
+
   if (myattr.prop) {
     str += " term_prop";
   }
