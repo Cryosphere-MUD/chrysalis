@@ -4,6 +4,8 @@ import { socketConnect } from "./socket.js";
 
 import { injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
 
+import { mudhost, mudport, conn_title, disconn_title } from "./settings.js";
+
 import { paste, keyDown, resetCommand } from "./command.js";
 
 const main = document.getElementById("main");
@@ -31,8 +33,9 @@ updateSize();
 let connected = false;
 
 function handleConnect(e) {
+  document.title = conn_title;
   connected = true;
-  injectText(["/// connected to remote server"]);
+  injectText(["/// connected to " + mudhost + " " + mudport]);
   resetCommand();
   command.style.display = "inline";
   reconnect.style.display = "none";
@@ -40,6 +43,7 @@ function handleConnect(e) {
 }
 
 function handleDisconnect(e) {
+  document.title = disconn_title;
   connected = false;
   injectText(["/// connection closed by remote server"]);
   command.style.display = "none";
