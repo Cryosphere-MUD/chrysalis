@@ -93,6 +93,18 @@ function doEnter() {
   return true;
 }
 
+function previousWordStart(str, position) {
+  const substr = str.slice(0, position);
+  const match = substr.match(/^.*\s\S/);
+  return match ? match[0].length - 1 : 0;
+}
+
+function nextWordStart(str, position) {
+  const substr = str.slice(position);
+  const match = substr.match(/\s\S/);
+  return match ? position + match.index + 1 : str.length;
+}
+
 export function setEditText(newcommand) {
   edittext = newcommand;
   editpos = edittext.length;
@@ -114,12 +126,36 @@ const keyHandlers =
                   editpos -= 1;
                 }
               },
+        "Control-H": () => {
+                if (editpos > 0) {
+                  edittext = edittext.slice(0, editpos - 1) + edittext.slice(editpos);
+                  editpos -= 1;
+                }
+              },
+        "Alt-Backspace": () => {
+                const newpos = previousWordStart(edittext, editpos);
+                edittext = edittext.slice(0, newpos) + edittext.slice(editpos);
+                editpos = newpos;
+              },
         "Delete": () => {
                 if (editpos < edittext.length) {
                    edittext = edittext.slice(0, editpos) + edittext.slice(editpos + 1);
                 }
               },
+        "Control-D": () => {
+                if (editpos < edittext.length) {
+                   edittext = edittext.slice(0, editpos) + edittext.slice(editpos + 1);
+                }
+              },
+        "Alt-D": () => {
+                edittext = edittext.slice(0, editpos) + edittext.slice(nextWordStart(edittext, editpos));
+              },
         "ArrowLeft": () => {
+                if (editpos > 0) {
+                        editpos -= 1;
+                }
+        },
+        "Control-B": () => {
                 if (editpos > 0) {
                         editpos -= 1;
                 }
@@ -129,11 +165,21 @@ const keyHandlers =
                         editpos += 1;
                 }
         },
+        "Control-F": () => {
+                if (editpos < edittext.length) {
+                        editpos += 1;
+                }
+        },
+        "Alt-B": () => { editpos = previousWordStart(edittext, editpos) },
+        "Alt-F": () => { editpos = nextWordStart(edittext, editpos) },
         "ArrowUp": doHistoryPrev,
+        "Control-P": doHistoryPrev,
         "ArrowDown": doHistoryNext,
-        "Control-A": () => { editpos = 0},
+        "Control-N": doHistoryNext,
+        "Control-A": () => { editpos = 0 },
         "Control-E": () => { editpos = edittext.length; },
         "Control-K": () => { edittext = edittext.slice(0, editpos); },
+        "Control-U": () => { editpos = 0; edittext = ""; },
         "Control-C": () => {
                 if (window.getSelection().toString().length > 0) {
                         return false;
@@ -146,10 +192,17 @@ const keyHandlers =
 };
 
 export function keyDown(event) {
-  let keyname = event.key;
+  let keyname = event.code;
+  keyname = keyname.replace(/^Key/, '');
+
+  if (event.altKey)
+  {
+        keyname = "Alt-" + keyname;
+  }
+
   if (event.ctrlKey)
   {
-        keyname = "Control-" + keyname.toUpperCase();
+        keyname = "Control-" + keyname;
   }
 
   if (keyHandlers[keyname] != null)
