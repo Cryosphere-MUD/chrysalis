@@ -83,7 +83,7 @@ function doHistoryNext() {
 function doEnter() {
   sendCommand(edittext);
   appendCommand(edittext, !editpassword);
-  if (!editpassword) {
+  if (!editpassword && !edittext.match(/^\s*$/) && edittext !== editcommands[editcommands.length-1]) {
     editcommands.push(edittext);
   }
   edittext = "";
