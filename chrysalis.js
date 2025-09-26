@@ -6,8 +6,6 @@ import { handleTerminal, injectText, renderOutputData, resetANSIState, scrollToE
 
 import { mudhost, mudport, conn_title, disconn_title } from "./settings.js";
 
-import { mudhost, mudport, conn_title, disconn_title } from "./settings.js";
-
 import { paste, keyDown, resetCommand } from "./command.js";
 
 import { TELOPT_EOR } from "./telnetconstants.js";
