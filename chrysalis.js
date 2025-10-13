@@ -6,7 +6,7 @@ import { handleTerminal, injectText, renderOutputData, resetANSIState, scrollToE
 
 import { mudhost, mudport, conn_title, disconn_title } from "./settings.js";
 
-import { paste, keyDown, resetCommand } from "./command.js";
+import { keyDown, resetCommand } from "./command.js";
 
 import { TELOPT_EOR } from "./telnetconstants.js";
 
@@ -14,9 +14,8 @@ const main = document.getElementById("main");
 const measure = document.getElementById("measure");
 const wide = document.getElementById("wide");
 const reconnect = document.getElementById("reconnect");
-const onmobile = document.getElementById("onmobile");
 const command = document.getElementById("command");
-const capture = document.getElementById("keyboard-capture");
+const output = document.getElementById("output");
 
 function updateSize() {
   const fullWidth = wide.offsetWidth;
@@ -34,22 +33,18 @@ updateSize();
 
 let connected = false;
 
-function handleConnect(e) {
+  function handleConnect(e) {
   document.title = conn_title;
   connected = true;
   injectText(["/// connected to " + mudhost + " " + mudport]);
   resetCommand();
-  command.style.display = "inline";
   reconnect.style.display = "none";
-  onmobile.style.display = "block";
 }
 
 function handleDisconnect(e) {
   document.title = disconn_title;
   connected = false;
   injectText(["/// connection closed by remote server"]);
-  command.style.display = "none";
-  onmobile.style.display = "none";
   reconnect.style.display = "inline";
   resetTelnet();
   resetANSIState();
@@ -75,20 +70,22 @@ function handleKeyDown(event) {
 }
 
 function handlePaste(event) {
-        if (connected) paste(event);
+  if (connected) paste(event);
 }
       
-window.onkeydown = handleKeyDown;
-window.addEventListener('paste', handlePaste);
+
+command.onkeydown = handleKeyDown;
+
+output.addEventListener("click", () => 
+{
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) {
+    command.focus();
+  }
+})
 
 reconnect.onclick = () => {
   connect();
 };
 
 connect();
-
-onmobile.onclick = () => {
-        onmobile.style.display = "none";
-        capture.style.display = "block";
-}
-
