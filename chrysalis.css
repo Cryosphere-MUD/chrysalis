@@ -1,11 +1,10 @@
 body {
-  font-family: monospace;
+  font-family: sans;
   background-color: black;
   color: white;
 }
 
 #input {
-  font-family: monospace;
   background-color: black;
   color: white;
 }
@@ -16,7 +15,6 @@ body {
 }
 
 #command {
-  font-family: monospace;
   background-color: black;
   color: white;
   border: none;
@@ -83,6 +81,10 @@ body {
 
 .term_prop {
   font-family: sans-serif;
+}
+
+.term_mono {
+  font-family: monospace;
 }
 
 .term_ital {
