@@ -1,4 +1,4 @@
-export const url = (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + ":4443/ws/";
+export const url = "ws://localhost:8080/";
 
 export const mudhost = "cryosphere.org";
 export const mudport = 6666;

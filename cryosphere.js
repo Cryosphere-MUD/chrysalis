@@ -1,6 +1,8 @@
 import { parseANSI, scrollToEnd } from "./terminal.js";
 
 export function handleTable(data) {
+  console.log("data", data);
+
   let table = document.createElement("table");
 
   let loose = data.style === "loose";
@@ -98,14 +100,14 @@ export function handleTable(data) {
     });
   }
 
-  output.appendChild(table);
+  return table;
 
-  if (data.header && loose) {
-    let div = document.createElement("div");
-    let span = document.createElement("span");
-    div.classList.add("heading-line");
-    output.appendChild(div);
-  }
+  // if (data.header && loose) {
+  //   let div = document.createElement("div");
+  //   let span = document.createElement("span");
+  //   div.classList.add("heading-line");
+  //   output.appendChild(div);
+  // }
   
-  scrollToEnd()
+  // scrollToEnd()
 }
