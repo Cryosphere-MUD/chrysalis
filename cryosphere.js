@@ -27,8 +27,8 @@ export function handleTable(data) {
     let span = document.createElement("span");
     div.classList.add("heading-line");
     span.classList.add("heading-label");
+    span.replaceChildren(parseANSI(data.title));
     div.appendChild(span);
-    span.innerText = data.title;
     output.appendChild(div);
   }
 
