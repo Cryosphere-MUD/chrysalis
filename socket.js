@@ -1,6 +1,6 @@
 import { settings } from "./settings.js";
 
-import { LifelineSocket } from "./lifeline/LifelineSocket.js"
+// import { LifelineSocket } from "./lifeline/LifelineSocket.js"
 
 let ws;
 
@@ -12,7 +12,7 @@ export function socketSend(arr) {
 }
 
 export function socketConnect() {
-  ws = new LifelineSocket(settings.url);
+  ws = new WebSocket(settings.url);
   if (ws) {
     ws.binaryType = "arraybuffer";
   }

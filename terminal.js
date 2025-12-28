@@ -1,5 +1,7 @@
 import { sendCommand, setEditText } from "./command.js";
 
+import { handleTable } from "./cryosphere.js";
+
 const ESC = "\x1B";
 const CSI = "\x9B";
 const BEL = "\x07";
@@ -22,6 +24,8 @@ let attr = {
   str: false,
   hide: false,
   prop: false,
+  in_json: false,
+  json: "",
   url: null,
 };
 
@@ -89,8 +93,8 @@ function attrToClassAndStyle(myattr) {
     str += ` term_bg${bg}`;
   }
 
-  if (myattr.prop) {
-    str += " term_prop";
+  if (!myattr.prop) {
+    str += " term_mono";
   }
   if (myattr.ital) {
     str += " term_ital";
@@ -499,6 +503,12 @@ function handleColorCommand(commands) {
       case "55":
         attr.over = false;
         break;
+      case "100":
+        attr.prop = true;
+        break;
+      case "101":
+        attr.prop = false;
+        break;
       default:
         console.log("unknown ANSI code", cmd);
     }
@@ -529,6 +539,18 @@ function handleOsc(oscstr) {
   if (commands[0] == "8") {
     if (commands[2] === "" || willHandleURL(commands[2])) {
       attr.url = commands[2];
+    }
+  }
+  if (commands[0] == "7500")
+  {
+    console.log("commands", commands);
+    const was = attr.in_json;
+    const now = commands[1] === "json";
+    attr.in_json = now;
+    if (was && !now)
+    {
+      console.log("ABI", attr.json);
+      outputData(handleTable(JSON.parse(attr.json)));
     }
   }
 }
@@ -597,6 +619,12 @@ export function handleANSI(data, charHandler = handleChar) {
   if (data === CSI) {
     mode = ESC;
     escStr = "[";
+    return;
+  }
+
+  if (attr.in_json)
+  {
+    attr.json += data;
     return;
   }
 

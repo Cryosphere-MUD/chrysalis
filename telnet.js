@@ -168,9 +168,6 @@ function parseGMCP(byteArray) {
 }
 
 function handleGMCP(gmcp) {
-  if (settings.handleTable && gmcp.package == "Client.Table 1") {
-    settings.handleTable(gmcp.payload);
-  }
 }
 
 function handleTType(subData) {
@@ -184,7 +181,7 @@ function handleTType(subData) {
 
   switch (ttypeCount) {
     case 0:
-      name = "chrysalis2";
+      name = "chrysalis_experimental";
       break;
     case 1:
       name = "chrysalis2:002_2025-05-06";
