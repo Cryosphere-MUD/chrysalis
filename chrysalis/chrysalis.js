@@ -1,6 +1,6 @@
 import { handleTelnet, negotiated, sendSize, resetTelnet } from "./telnet.js";
 
-import { socketConnect } from "./socket.js";
+import { socketConnect, socket } from "./socket.js";
 
 import { handleTerminal, injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
 
@@ -33,7 +33,7 @@ updateSize();
 
 let connected = false;
 
-  function handleConnect(e) {
+function handleConnect() {
   document.title = conn_title;
   connected = true;
   injectText(["/// connected to " + mudhost + " " + mudport]);
@@ -41,7 +41,7 @@ let connected = false;
   reconnect.style.display = "none";
 }
 
-function handleDisconnect(e) {
+function handleDisconnect() {
   document.title = disconn_title;
   connected = false;
   injectText(["/// connection closed by remote server"]);
@@ -50,20 +50,20 @@ function handleDisconnect(e) {
   resetANSIState();
 }
 
-function connect() {
-  const ws = socketConnect();
-  ws.onmessage = (event) => {
-    const arr = new Uint8Array(event.data);
-    arr.forEach((ch) => handleTelnet(ch));
-    if (!negotiated(TELOPT_EOR))
-        handleTerminal();
-    if (renderOutputData())
-        scrollToEnd();
-  };
-  ws.onopen = handleConnect;
-  ws.onerror = handleDisconnect;
-  ws.onclose = handleDisconnect;
-}
+// function connect() {
+//   const ws = socketConnect();
+//   ws.onmessage = (event) => {
+//     const arr = new Uint8Array(event.data);
+//     arr.forEach((ch) => handleTelnet(ch));
+//     if (!negotiated(TELOPT_EOR))
+//         handleTerminal();
+//     if (renderOutputData())
+//         scrollToEnd();
+//   };
+//   ws.onopen = handleConnect;
+//   ws.onerror = handleDisconnect;
+//   ws.onclose = handleDisconnect;
+// }
 
 function handleKeyDown(event) {
   if (connected) keyDown(event);
@@ -72,7 +72,7 @@ function handleKeyDown(event) {
 function handlePaste(event) {
   if (connected) paste(event);
 }
-      
+
 
 command.onkeydown = handleKeyDown;
 
@@ -84,8 +84,51 @@ output.addEventListener("click", () =>
   }
 })
 
-reconnect.onclick = () => {
-  connect();
-};
+socketConnect();
 
-connect();
+socket.on("connect",
+  () => {
+    console.log("recovered", socket.recovered, socket);
+  }
+);
+
+socket.on("sessionID", (id) => {
+  localStorage.setItem("sessionID", id);
+  socket.auth.sessionID = id;   // important for future reconnects
+});
+
+socket.on("mud-output", (data) => {
+  const arr = new Uint8Array(data);
+  arr.forEach((ch) => handleTelnet(ch));
+  if (!negotiated(TELOPT_EOR))
+    handleTerminal();
+  if (renderOutputData())
+    scrollToEnd();
+  output.scrollTop = output.scrollHeight;
+});
+
+socket.on("mud-status", (data) => {
+  console.log("status", data);
+  if (data == "disconnected") {
+    handleDisconnect();
+  } else
+  {
+    handleConnect();
+  }
+})
+
+const toggleBtn = document.getElementById("toggle-connection");
+
+toggleBtn.addEventListener("click", () => {
+  if (connected) {
+    socket.disconnect();
+    toggleBtn.textContent = "Reconnect";
+    connected = false;
+    // output.textContent += "\n*** Simulated disconnect ***\n";
+  } else {
+    socket.connect();
+    toggleBtn.textContent = "Disconnect";
+    connected = true;
+    // output.textContent += "\n*** Reconnected ***\n";
+  }
+});
