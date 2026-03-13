@@ -110,7 +110,7 @@ function attrToClassAndStyle(myattr) {
   if (myattr.url) {
     str += " link";
   }
-  return { class: str, style, url: myattr.url };
+  return { class: str, style, url: myattr.url, lang: myattr.lang };
 }
 
 function makeCallback(callback, param) {
@@ -171,7 +171,8 @@ function lineToElements(line) {
     if (
       cls.class !== lastClass.class ||
       cls.style !== lastClass.style ||
-      cls.url !== lastClass.url
+      cls.url !== lastClass.url ||
+      cls.lang !== lastClass.lang
     ) {
       if (currentSpan) {
         workingLine.appendChild(currentSpan);
@@ -188,6 +189,7 @@ function lineToElements(line) {
 
       if (cls.class) currentSpan.setAttribute("class", cls.class);
       if (cls.style) currentSpan.setAttribute("style", cls.style);
+      if (cls.lang) currentSpan.setAttribute("lang", cls.lang);
 
       lastClass = cls;
     }
@@ -365,8 +367,10 @@ function handleColorCommand(commands) {
       case "":
       case "0":
         let oldprop = attr.prop;
+        let oldlang = attr.lang;
         attr = Object.assign({}, defattr);
         attr.prop = oldprop;
+        attr.lang = oldlang;
         break;
       case "1":
         attr.bold = true;
@@ -530,6 +534,10 @@ function handleOsc(oscstr) {
     if (commands[2] === "" || willHandleURL(commands[2])) {
       attr.url = commands[2];
     }
+  }
+
+  if (commands[0] == "639") {
+    attr.lang = commands[1];
   }
 }
 
