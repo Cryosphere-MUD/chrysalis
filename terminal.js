@@ -1,4 +1,6 @@
 import { sendCommand, setEditText } from "./command.js";
+import { negotiated } from "./telnet.js";
+import { TELOPT_EOR } from "./telnetconstants.js";
 
 const ESC = "\x1B";
 const CSI = "\x9B";
@@ -247,6 +249,10 @@ function handleChar(data) {
 }
 
 function handlePrompt() {
+  if (!negotiated(TELOPT_EOR))
+    while (prompt.firstChild)
+      output.appendChild(prompt.firstChild);
+
   promptLine = outLine;
   const promptElements = lineToElements(outLine);
   if (promptElements)
