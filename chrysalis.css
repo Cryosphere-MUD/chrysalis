@@ -8,6 +8,7 @@ body {
   font-family: monospace;
   background-color: black;
   color: white;
+  display: flex;
 }
 
 #main {
@@ -20,6 +21,7 @@ body {
   background-color: black;
   color: white;
   border: none;
+  flex: 1;
 }
 
 #command:focus {
