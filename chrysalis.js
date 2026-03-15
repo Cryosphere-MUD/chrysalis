@@ -76,7 +76,7 @@ function handlePaste(event) {
 
 command.onkeydown = handleKeyDown;
 
-output.addEventListener("click", () => 
+main.addEventListener("click", () =>
 {
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed) {
