@@ -23,7 +23,7 @@ import {
 
 import { socketSend } from "./socket.js";
 
-import { handleTerminal } from "./terminal.js";
+import { terminal } from "./terminal.js";
 
 import { settings } from "./settings.js";
 
@@ -261,7 +261,7 @@ export function handleTelnet(data) {
 
     if (data === EOR) {
       telnetState = 0;
-      handleTerminal();
+      terminal.handleTerminal();
       return;
     }
 
@@ -269,7 +269,7 @@ export function handleTelnet(data) {
       if (subMode) {
         subData.push(data);
       } else {
-        handleTerminal(data);
+        terminal.handleTerminal(data);
       }
       telnetState = 0;
       return;
@@ -294,7 +294,7 @@ export function handleTelnet(data) {
     if (subMode) {
       subData.push(data);
     } else {
-      handleTerminal(data);
+      terminal.handleTerminal(data);
     }
   } else {
     console.error("unknown byte", data, "in state", telnetState);

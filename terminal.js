@@ -8,53 +8,6 @@ const BEL = "\x07";
 const OSC = "]";
 const OSC_ESC = "]\x1b";
 
-const output = document.getElementById("output");
-const prompt = document.getElementById("prompt");
-
-let attr = {
-  bold: false,
-  faint: false,
-  fgcol: "white",
-  bgcol: "black",
-  ital: false,
-  und: false,
-  und2: false,
-  over: false,
-  inv: false,
-  str: false,
-  hide: false,
-  prop: false,
-  url: null,
-};
-
-const defattr = Object.assign({}, attr);
-
-let outLine = [];
-let cr = false;
-let outputBatch = [];
-
-let lastData;
-
-let gotIndentMarker = false;
-
-let promptLine;
-
-let mode = 0;
-let escStr = "";
-
-let utf8fragment = "";
-
-export function resetANSIState() {
-  outLine = [];
-  cr = false;
-  outputBatch = [];
-  lastData = undefined;
-  gotIndentMarker = false;
-  promptLine = false;
-  mode = 0;
-  escStr = "";
-}
-
 function attrToClassAndStyle(myattr) {
   let str = "";
   let style = "";
@@ -115,6 +68,224 @@ function attrToClassAndStyle(myattr) {
   return { class: str, style, url: myattr.url, lang: myattr.lang };
 }
 
+export class Terminal {
+  constructor() {
+    this.output = document.getElementById("output");
+    this.prompt = document.getElementById("prompt");
+    this.attr = {
+      bold: false,
+      faint: false,
+      fgcol: "white",
+      bgcol: "black",
+      ital: false,
+      und: false,
+      und2: false,
+      over: false,
+      inv: false,
+      str: false,
+      hide: false,
+      prop: false,
+      url: null};
+
+    this.defattr = Object.assign({}, this.attr);
+
+    this.outLine = [];
+    this.cr = false;
+    this.outputBatch = [];
+
+    this.lastData;
+
+    this.gotIndentMarker = false;
+
+    this.promptLine;
+
+    this.mode = 0;
+    this.escStr = "";
+
+    this.utf8fragment = "";
+  }
+
+  resetANSIState() {
+    this.outLine = [];
+    this.cr = false;
+    this.outputBatch = [];
+    this.lastData = undefined;
+    this.gotIndentMarker = false;
+    this.promptLine = false;
+    this.mode = 0;
+    this.escStr = "";
+  }
+
+  outputData(data) {
+    if (data == null) {
+      return;
+    }
+    this.outputBatch.push(data);
+  }
+
+  renderOutputData() {
+    if (this.outputBatch.length == 0)
+        return false;
+    const frag = document.createDocumentFragment();
+    for (let line of this.outputBatch) {
+      frag.append(line);
+    }
+    this.output.appendChild(frag);
+    this.outputBatch = [];
+    return true;
+  }
+
+  injectText(text) {
+    this.outputData(text);
+    this.outputData(document.createElement("br"));
+    this.renderOutputData();
+  }
+
+  handleChar(data) {
+    if (data === "\r") {
+      this.cr = true;
+    } else if (data === "\n") {
+      if (this.outLine.length) {
+        this.outputData(lineToElements(this.outLine));
+      }
+      this.outputData(document.createElement("br"));
+      this.outLine = [];
+      this.cr = false;
+    } else {
+      if (this.cr) {
+        this.outLine = [];
+        this.cr = false;
+      }
+
+      const cls = attrToClassAndStyle(this.attr);
+
+      if (this.gotIndentMarker) {
+        this.outLine.push({ cls, data, isIndentMarker: this.gotIndentMarker });
+        this.gotIndentMarker = false;
+      } else this.outLine.push({ cls, data });
+    }
+  }
+
+  handleEscape(str, code) {
+    if (code === "m" && str[0] === "[") {
+      let commands = str.slice(1).split(";");
+      if (commands.length === 0) {
+        commands = [0];
+      }
+      handleColorCommand(commands, this.attr, this.defattr);
+    }
+    if (code == "z" && str[0] === "{") {
+      this.gotIndentMarker = true;
+    }
+  }
+
+  handleANSI(data, charHandler) {
+    if (data === undefined) {
+      this.handlePrompt();
+      return;
+    }
+
+    if (this.mode == OSC_ESC) {
+      if (data == "\\") {
+        handleOsc(this.escStr);
+        this.escStr = "";
+        this.mode = 0;
+        return;
+      }
+      this.mode = 0;
+      return;
+    }
+
+    if (this.mode == OSC) {
+      if (data == ESC) {
+        this.mode = OSC_ESC;
+        return;
+      }
+      if (data == BEL) {
+        handleOsc(this.escStr);
+        this.escStr = "";
+        this.mode = 0;
+        return;
+      }
+      this.escStr += data;
+      return;
+    }
+
+    if (this.mode == CSI) {
+      if (isLetter(data)) {
+        this.handleEscape(this.escStr, data);
+        this.mode = 0;
+        this.escStr = "";
+      }
+      this.escStr += data;
+      return;
+    }
+
+    if (this.mode == ESC) {
+      if (data == OSC) {
+        this.mode = OSC;
+        this.escStr = "";
+        return;
+      }
+      if (data == "[") {
+        this.mode = CSI;
+      }
+      this.escStr += data;
+      return;
+    }
+
+    if (data === ESC) {
+      this.mode = ESC;
+      this.escStr = "";
+      return;
+    }
+
+    if (data === CSI) {
+      this.mode = ESC;
+      this.escStr = "[";
+      return;
+    }
+
+    if (charHandler)
+      charHandler(data, this.attr);
+    else
+      this.handleChar(data, this.attr);
+  }
+
+  handleTerminal(data) {
+    if (data === undefined) {
+      this.handleANSI(undefined);
+      return;
+    }
+    if (data >= 0 && data <= 0x7f) {
+      this.handleANSI(String.fromCharCode(data));
+      return;
+    }
+    utf8fragment += String.fromCharCode(data);
+    try {
+      const decoded = utf8.decode(utf8fragment);
+      utf8fragment = "";
+      this.handleANSI(decoded);
+    } catch (err) {
+      // do nothing
+    }
+  }
+
+  handlePrompt() {
+    if (!negotiated(TELOPT_EOR))
+      while (this.prompt.firstChild)
+        this.output.appendChild(this.prompt.firstChild);
+
+    this.promptLine = this.outLine;
+    const promptElements = lineToElements(this.outLine);
+    if (promptElements)
+      this.prompt.replaceChildren(promptElements);
+    else
+      this.prompt.innerHTML = "";
+    this.outLine = [];
+  }
+};
+
 function makeCallback(callback, param) {
   return function () {
     callback(param);
@@ -137,7 +308,7 @@ function handleURLClick(value) {
   if (value.startsWith("send:")) {
     let command = decodeURIComponent(value.slice(5));
     sendCommand(command);
-    appendCommand(command, true);
+    terminal.appendCommand(command, true);
     return;
   }
   if (value.startsWith("https://") || value.startsWith("http://")) {
@@ -206,64 +377,6 @@ function lineToElements(line) {
   return;
 }
 
-function outputData(data) {
-  if (data == null) {
-    return;
-  }
-  outputBatch.push(data);
-}
-
-export function renderOutputData() {
-  if (outputBatch.length == 0)
-        return false;
-  const frag = document.createDocumentFragment();
-  for (let line of outputBatch) {
-    frag.append(line);
-  }
-  output.appendChild(frag);
-  outputBatch = [];
-  return true;
-}
-
-function handleChar(data) {
-  if (data === "\r") {
-    cr = true;
-  } else if (data === "\n") {
-    if (outLine.length) {
-      outputData(lineToElements(outLine));
-    }
-    outputData(document.createElement("br"));
-    outLine = [];
-    cr = false;
-  } else {
-    if (cr) {
-      outLine = [];
-      cr = false;
-    }
-
-    const cls = attrToClassAndStyle(attr);
-
-    if (gotIndentMarker) {
-      outLine.push({ cls, data, isIndentMarker: gotIndentMarker });
-      gotIndentMarker = false;
-    } else outLine.push({ cls, data });
-  }
-}
-
-function handlePrompt() {
-  if (!negotiated(TELOPT_EOR))
-    while (prompt.firstChild)
-      output.appendChild(prompt.firstChild);
-
-  promptLine = outLine;
-  const promptElements = lineToElements(outLine);
-  if (promptElements)
-        prompt.replaceChildren(promptElements);
-  else
-        prompt.innerHTML = "";
-  outLine = [];
-}
-
 export function appendCommand(command, echo) {
   outputData(lineToElements(promptLine));
   if (echo) {
@@ -277,12 +390,6 @@ export function appendCommand(command, echo) {
 
 export function scrollToEnd() {
   main.scrollTop = main.scrollHeight;
-}
-
-export function injectText(text) {
-  outputData(text);
-  outputData(document.createElement("br"));
-  renderOutputData();
 }
 
 function gettruecolor(r, g, b) {
@@ -366,7 +473,7 @@ function get256(code) {
   return "#f8f";
 }
 
-function handleColorCommand(commands) {
+function handleColorCommand(commands, attr, defattr) {
   for (let idx = 0; idx < commands.length; idx += 1) {
     const cmd = commands[idx];
     switch (cmd) {
@@ -515,19 +622,6 @@ function handleColorCommand(commands) {
   }
 }
 
-function handleEscape(str, code) {
-  if (code === "m" && str[0] === "[") {
-    let commands = str.slice(1).split(";");
-    if (commands.length === 0) {
-      commands = [0];
-    }
-    handleColorCommand(commands);
-  }
-  if (code == "z" && str[0] === "{") {
-    gotIndentMarker = true;
-  }
-}
-
 function isLetter(str) {
   return str.length === 1 && str.match(/[a-z]/i);
 }
@@ -544,95 +638,6 @@ function handleOsc(oscstr) {
 
   if (commands[0] == "639") {
     attr.lang = commands[1];
-  }
-}
-
-export function handleANSI(data, charHandler = handleChar) {
-  if (data === undefined) {
-    handlePrompt();
-    return;
-  }
-
-  if (mode == OSC_ESC) {
-    if (data == "\\") {
-      handleOsc(escStr);
-      escStr = "";
-      mode = 0;
-      return;
-    }
-    mode = 0;
-    return;
-  }
-
-  if (mode == OSC) {
-    if (data == ESC) {
-      mode = OSC_ESC;
-      return;
-    }
-    if (data == BEL) {
-      handleOsc(escStr);
-      escStr = "";
-      mode = 0;
-      return;
-    }
-    escStr += data;
-    return;
-  }
-
-  if (mode == CSI) {
-    if (isLetter(data)) {
-      handleEscape(escStr, data);
-      mode = 0;
-      escStr = "";
-    }
-    escStr += data;
-    return;
-  }
-
-  if (mode == ESC) {
-    if (data == OSC) {
-      mode = OSC;
-      escStr = "";
-      return;
-    }
-    if (data == "[") {
-      mode = CSI;
-    }
-    escStr += data;
-    return;
-  }
-
-  if (data === ESC) {
-    mode = ESC;
-    escStr = "";
-    return;
-  }
-
-  if (data === CSI) {
-    mode = ESC;
-    escStr = "[";
-    return;
-  }
-
-  charHandler(data, attr);
-}
-
-export function handleTerminal(data) {
-  if (data === undefined) {
-    handleANSI(undefined);
-    return;
-  }
-  if (data >= 0 && data <= 0x7f) {
-    handleANSI(String.fromCharCode(data));
-    return;
-  }
-  utf8fragment += String.fromCharCode(data);
-  try {
-    const decoded = utf8.decode(utf8fragment);
-    utf8fragment = "";
-    handleANSI(decoded);
-  } catch (err) {
-    // do nothing
   }
 }
 
@@ -660,3 +665,5 @@ export function parseANSI(text) {
 
   return lineToElements(buffer);
 }
+
+export const terminal = new Terminal();

@@ -2,7 +2,7 @@ import { handleTelnet, negotiated, sendSize, resetTelnet } from "./telnet.js";
 
 import { socketConnect } from "./socket.js";
 
-import { handleTerminal, injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
+import { terminal, scrollToEnd } from "./terminal.js";
 
 import { mudhost, mudport, conn_title, disconn_title } from "./settings.js";
 
@@ -33,10 +33,10 @@ updateSize();
 
 let connected = false;
 
-  function handleConnect(e) {
+function handleConnect(e) {
   document.title = conn_title;
   connected = true;
-  injectText(["/// connected to " + mudhost + " " + mudport]);
+  terminal.injectText(["/// connected to " + mudhost + " " + mudport]);
   resetCommand();
   reconnect.style.display = "none";
 }
@@ -57,7 +57,7 @@ function connect() {
     arr.forEach((ch) => handleTelnet(ch));
     if (!negotiated(TELOPT_EOR))
         handleTerminal();
-    if (renderOutputData())
+    if (terminal.renderOutputData())
         scrollToEnd();
   };
   ws.onopen = handleConnect;
