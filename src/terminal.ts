@@ -8,7 +8,40 @@ const BEL = "\x07";
 const OSC = "]";
 const OSC_ESC = "]\x1b";
 
-function attrToClassAndStyle(myattr) {
+interface Attributes
+{
+  fgcol: string;
+  bgcol: string;
+  inv: boolean;
+  hide: boolean;
+  faint: boolean;
+  bold: boolean;
+  prop: boolean;
+  ital: boolean;
+  und: boolean;
+  over: boolean;
+  und2: boolean;
+  str: boolean;
+  url: string | null;
+  lang?: string | undefined;
+}
+
+const defattr = {
+      bold: false,
+      faint: false,
+      fgcol: "white",
+      bgcol: "black",
+      ital: false,
+      und: false,
+      und2: false,
+      over: false,
+      inv: false,
+      str: false,
+      hide: false,
+      prop: false,
+      url: null};
+
+function attrToClassAndStyle(myattr: Attributes) {
   let str = "";
   let style = "";
   let fg = myattr.fgcol;
@@ -68,10 +101,26 @@ function attrToClassAndStyle(myattr) {
   return { class: str, style, url: myattr.url, lang: myattr.lang };
 }
 
+interface Class { class: string; style: string; url: string | null; lang: string | undefined; };
+
+interface Line { cls: Class; data: string; isIndentMarker?: boolean; }
+
 export class Terminal {
+  output: HTMLElement;
+  prompt: HTMLElement;
+  attr: Attributes;
+  defattr: Attributes;
+  outLine: Line[];
+  cr: boolean;
+  outputBatch: HTMLElement[];
+  gotIndentMarker: boolean;
+  promptLine: any;
+  mode: string | number;
+  escStr: string;
+  utf8fragment: string;
   constructor() {
-    this.output = document.getElementById("output");
-    this.prompt = document.getElementById("prompt");
+    this.output = document.getElementById("output")!;
+    this.prompt = document.getElementById("prompt")!;
     this.attr = {
       bold: false,
       faint: false,
@@ -93,8 +142,6 @@ export class Terminal {
     this.cr = false;
     this.outputBatch = [];
 
-    this.lastData;
-
     this.gotIndentMarker = false;
 
     this.promptLine;
@@ -109,14 +156,13 @@ export class Terminal {
     this.outLine = [];
     this.cr = false;
     this.outputBatch = [];
-    this.lastData = undefined;
     this.gotIndentMarker = false;
     this.promptLine = false;
     this.mode = 0;
     this.escStr = "";
   }
 
-  outputData(data) {
+  outputData(data: any) {
     if (data == null) {
       return;
     }
@@ -135,13 +181,13 @@ export class Terminal {
     return true;
   }
 
-  injectText(text) {
+  injectText(text: string[]) {
     this.outputData(text);
     this.outputData(document.createElement("br"));
     this.renderOutputData();
   }
 
-  handleChar(data) {
+  handleChar(data: string) {
     if (data === "\r") {
       this.cr = true;
     } else if (data === "\n") {
@@ -166,11 +212,11 @@ export class Terminal {
     }
   }
 
-  handleEscape(str, code) {
+  handleEscape(str: string, code: string) {
     if (code === "m" && str[0] === "[") {
       let commands = str.slice(1).split(";");
       if (commands.length === 0) {
-        commands = [0];
+        commands = ["0"];
       }
       handleColorCommand(commands, this.attr, this.defattr);
     }
@@ -179,7 +225,7 @@ export class Terminal {
     }
   }
 
-  handleANSI(data, charHandler) {
+  handleANSI(data?: string, charHandler?: (data: string, attr: Attributes) => void) {
     if (data === undefined) {
       this.handlePrompt();
       return;
@@ -187,7 +233,7 @@ export class Terminal {
 
     if (this.mode == OSC_ESC) {
       if (data == "\\") {
-        handleOsc(this.escStr);
+        this.handleOsc(this.escStr);
         this.escStr = "";
         this.mode = 0;
         return;
@@ -202,7 +248,7 @@ export class Terminal {
         return;
       }
       if (data == BEL) {
-        handleOsc(this.escStr);
+        this.handleOsc(this.escStr);
         this.escStr = "";
         this.mode = 0;
         return;
@@ -249,10 +295,10 @@ export class Terminal {
     if (charHandler)
       charHandler(data, this.attr);
     else
-      this.handleChar(data, this.attr);
+      this.handleChar(data);
   }
 
-  handleTerminal(data) {
+  handleTerminal(data?: any) {
     if (data === undefined) {
       this.handleANSI(undefined);
       return;
@@ -261,10 +307,10 @@ export class Terminal {
       this.handleANSI(String.fromCharCode(data));
       return;
     }
-    utf8fragment += String.fromCharCode(data);
+    this.utf8fragment += String.fromCharCode(data);
     try {
-      const decoded = utf8.decode(utf8fragment);
-      utf8fragment = "";
+      const decoded = utf8.decode(this.utf8fragment);
+      this.utf8fragment = "";
       this.handleANSI(decoded);
     } catch (err) {
       // do nothing
@@ -284,22 +330,51 @@ export class Terminal {
       this.prompt.innerHTML = "";
     this.outLine = [];
   }
+
+  appendCommand(command: string, echo: boolean) {
+    this.outputData(lineToElements(this.promptLine));
+    if (echo) {
+      this.outputData(command);
+      this.outputData(document.createElement("br"));
+      this.renderOutputData();
+    }
+    this.prompt.replaceChildren();
+    scrollToEnd()
+  }
+
+  handleOsc(oscstr: string) {
+    let commands = oscstr.slice(0).split(";");
+    if (commands[0] == "0" || commands[0] == "2") document.title = commands[1]!;
+
+    if (commands[0] == "8") {
+      if (commands[2] === "" || willHandleURL(commands[2]!)) {
+        this.attr.url = commands[2]!;
+      }
+    }
+
+    if (commands[0] == "639") {
+      this.attr.lang = commands[1]!;
+    }
+  }
+
+
 };
 
-function makeCallback(callback, param) {
+function makeCallback(callback: any, param: any) {
   return function () {
     callback(param);
   };
 }
 
-function willHandleURL(value) {
+function willHandleURL(value: string) {
   if (value.startsWith("prompt:")) return true;
   if (value.startsWith("send:")) return true;
   if (value.startsWith("https://")) return true;
   if (value.startsWith("http://")) return true;
+  return false;
 }
 
-function handleURLClick(value) {
+function handleURLClick(value: string) {
   if (value.startsWith("prompt:")) {
     let command = decodeURIComponent(value.slice(7));
     setEditText(command);
@@ -316,18 +391,16 @@ function handleURLClick(value) {
   }
 }
 
-function lineToElements(line) {
-  if (!line)
-        return;
+function lineToElements(line: Line[]) {
 
-  let outItem = document.createDocumentFragment();
-  let lastClass = {};
+  let outItem: any = document.createDocumentFragment();
+  let lastClass: Class = {class: "", style :"", url : "", lang: ""};
 
   let workingLine = outItem;
 
-  let currentSpan;
+  let currentSpan: any;
 
-  let indent;
+  let indent : number | null;
 
   line.forEach((arg, pos) => {
     if (arg.isIndentMarker && indent == null) {
@@ -377,29 +450,24 @@ function lineToElements(line) {
   return;
 }
 
-export function appendCommand(command, echo) {
-  outputData(lineToElements(promptLine));
-  if (echo) {
-    outputData(command);
-    outputData(document.createElement("br"));
-    renderOutputData();
-  }
-  prompt.replaceChildren();
-  scrollToEnd()
-}
+const main = document.getElementById("main")!;
 
 export function scrollToEnd() {
   main.scrollTop = main.scrollHeight;
 }
 
-function gettruecolor(r, g, b) {
+function gettruecolor(r: string, g: string, b: string) {
   let col =
     "#" +
     [r, g, b].map((x) => parseInt(x).toString(16).padStart(2, "0")).join("");
   return col;
 }
 
-function get256(code) {
+function get256(stringcode: string) {
+  const intensities = ["00", "5f", "87", "af", "d7", "ff"]; // per xterm
+
+  let code = parseInt(stringcode, 10);
+
   if (code < 16) {
     const colors = [
       "black",
@@ -419,21 +487,18 @@ function get256(code) {
       "cyanbold",
       "whitebold",
     ];
-    return colors[code];
+    return colors[code]!;
   }
 
-  const intensities = ["00", "5f", "87", "af", "d7", "ff"]; // per xterm
-
-  code = parseInt(code, 10);
   if (code >= 16 && code < 232) {
     code -= 16;
     const b = code % 6;
     const g = Math.floor(code / 6) % 6;
     const r = Math.floor(code / 36) % 6;
     return "#"
-      .concat(intensities[r])
-      .concat(intensities[g])
-      .concat(intensities[b]);
+      .concat(intensities[r]!)
+      .concat(intensities[g]!)
+      .concat(intensities[b]!);
   }
   if (code >= 233 && code < 256) {
     const greyCodes = [
@@ -465,15 +530,15 @@ function get256(code) {
 
     code -= 233;
 
-    code = greyCodes[code];
+    const grey = greyCodes[code]!;
 
-    return "#".concat(code).concat(code).concat(code);
+    return "#".concat(grey).concat(grey).concat(grey);
   }
 
   return "#f8f";
 }
 
-function handleColorCommand(commands, attr, defattr) {
+function handleColorCommand(commands: string[], attr: Attributes, defattr: Attributes) {
   for (let idx = 0; idx < commands.length; idx += 1) {
     const cmd = commands[idx];
     switch (cmd) {
@@ -555,14 +620,14 @@ function handleColorCommand(commands, attr, defattr) {
       case "38":
         if (commands[idx + 1] == "2") {
           attr.fgcol = gettruecolor(
-            commands[idx + 2],
-            commands[idx + 3],
-            commands[idx + 4]
+            commands[idx + 2]!,
+            commands[idx + 3]!,
+            commands[idx + 4]!
           );
           idx += 4;
         }
         if (commands[idx + 1] == "5") {
-          attr.fgcol = get256(commands[idx + 2]);
+          attr.fgcol = get256(commands[idx + 2]!);
           idx += 2;
         }
         break;
@@ -596,14 +661,14 @@ function handleColorCommand(commands, attr, defattr) {
       case "48":
         if (commands[idx + 1] == "2") {
           attr.bgcol = gettruecolor(
-            commands[idx + 2],
-            commands[idx + 3],
-            commands[idx + 4]
+            commands[idx + 2]!,
+            commands[idx + 3]!,
+            commands[idx + 4]!
           );
           idx += 4;
         }
         if (commands[idx + 1] == "5") {
-          attr.bgcol = get256(commands[idx + 2]);
+          attr.bgcol = get256(commands[idx + 2]!);
         }
         idx += 2;
         break;
@@ -622,46 +687,30 @@ function handleColorCommand(commands, attr, defattr) {
   }
 }
 
-function isLetter(str) {
+function isLetter(str: string) {
   return str.length === 1 && str.match(/[a-z]/i);
 }
 
-function handleOsc(oscstr) {
-  let commands = oscstr.slice(0).split(";");
-  if (commands[0] == "0" || commands[0] == "2") document.title = commands[1];
-
-  if (commands[0] == "8") {
-    if (commands[2] === "" || willHandleURL(commands[2])) {
-      attr.url = commands[2];
-    }
-  }
-
-  if (commands[0] == "639") {
-    attr.lang = commands[1];
-  }
-}
-
-export function parseANSI(text) {
-  const origattr = Object.assign({}, attr);
-  attr = Object.assign({}, defattr);
+export function parseANSI(text: string) {
+  const attr = Object.assign({}, defattr);
 
   let parsedText = "";
 
-  let buffer = [];
+  let buffer: any[] = [];
 
-  let handler = (data, attr) => {
+  const localTerm = new Terminal();
+
+  let handler = (data: string, attr: Attributes) => {
     const cls = attrToClassAndStyle(attr);
     buffer.push({ cls, data });
     parsedText += data;
   };
 
   Array.from(text).forEach((ch) => {
-    handleANSI(ch, handler);
+    localTerm.handleANSI(ch, handler);
   });
 
   if (buffer.length == 0) return document.createDocumentFragment();
-
-  attr = Object.assign({}, origattr);
 
   return lineToElements(buffer);
 }

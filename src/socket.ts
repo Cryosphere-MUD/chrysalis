@@ -2,9 +2,9 @@ import { settings } from "./settings.js";
 
 import { LifelineSocket } from "./lifeline/LifelineSocket.js"
 
-let ws;
+let ws : LifelineSocket | null;
 
-export function socketSend(arr) {
+export function socketSend(arr: number[]) {
   if (arr.length === 0 || ws == null) {
     return;
   }

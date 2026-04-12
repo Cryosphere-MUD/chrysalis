@@ -2,11 +2,11 @@ import { htmlescape } from "./utils.js";
 
 import { socketSend } from "./socket.js";
 
-import { appendCommand } from "./terminal.js";
+import { terminal } from "./terminal.js";
 
-const command = document.getElementById("command");
+const command = document.getElementById("command") as HTMLInputElement;
 
-export function sendCommand(value) {
+export function sendCommand(value: string) {
   value = utf8.encode(value);
 
   const cmd = [];
@@ -22,11 +22,11 @@ export function sendCommand(value) {
 }
 
 let editpassword = false;
-let editcommandpos = null;
-let futurecommand = null;
-let editcommands = [];
+let editcommandpos: number | null = null;
+let futurecommand: string | null = null;
+let editcommands: any[] = [];
 
-export function setEcho(yes) {
+export function setEcho(yes: boolean) {
   editpassword = !yes;
   if (editpassword)
     command.type = "password";
@@ -50,7 +50,7 @@ function doHistoryNext() {
   if (editcommandpos != null && editcommandpos < editcommands.length) {
     editcommandpos++;
     if (editcommandpos === editcommands.length) {
-      command.value = futurecommand;
+      command.value = futurecommand ? futurecommand : "";
       editcommandpos = null;
     } else {
       command.value = editcommands[editcommandpos];
@@ -61,7 +61,7 @@ function doHistoryNext() {
 
 function doEnter() {
   sendCommand(command.value);
-  appendCommand(command.value, !editpassword);
+  terminal.appendCommand(command.value, !editpassword);
   if (!editpassword && !command.value.match(/^\s*$/) && command.value !== editcommands[editcommands.length-1]) {
     editcommands.push(command.value);
   }
@@ -71,7 +71,7 @@ function doEnter() {
   return true;
 }
 
-export function setEditText(newcommand) {
+export function setEditText(newcommand: string) {
   command.value = newcommand;
 }
 
@@ -79,7 +79,7 @@ export function resetCommand() {
   setEditText("");
 }
 
-const keyHandlers = 
+const keyHandlers : Record<string, () => void | boolean> =
 {
         "Enter": doEnter,
         "ArrowUp": doHistoryPrev,
@@ -88,7 +88,7 @@ const keyHandlers =
         "Control-N": doHistoryNext,
 };
 
-export function keyDown(event) {
+export function keyDown(event: KeyboardEvent) {
   let keyname = event.code;
   keyname = keyname.replace(/^Key/, '');
 
@@ -102,9 +102,11 @@ export function keyDown(event) {
         keyname = "Control-" + keyname;
   }
 
-  if (keyHandlers[keyname] != null)
+  const handler = keyHandlers[keyname];
+
+  if (handler)
   {
-        if (keyHandlers[keyname]() !== false)
+        if (handler() !== false)
         {
                 event.preventDefault();
                 return;

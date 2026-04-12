@@ -1,6 +1,8 @@
 import { parseANSI, scrollToEnd } from "./terminal.js";
 
-export function handleTable(data) {
+const output = document.getElementById("output")!;
+
+export function handleTable(data: any) {
   let table = document.createElement("table");
 
   let loose = data.style === "loose";
@@ -12,9 +14,9 @@ export function handleTable(data) {
 
   let columns = 0;
 
-  let columnsRight = [];
+  let columnsRight: number[] = [];
 
-  data.header.forEach((cell, idx) => {
+  data.header.forEach((cell: any, idx: number) => {
     let newCell = document.createElement("th");
     newCell.innerText = cell["text"];
     headerRow.appendChild(newCell);
@@ -27,7 +29,9 @@ export function handleTable(data) {
     let span = document.createElement("span");
     div.classList.add("heading-line");
     span.classList.add("heading-label");
-    span.replaceChildren(parseANSI(data.title));
+    const elements = parseANSI(data.title);
+    if (elements)
+      span.replaceChildren(elements);
     div.appendChild(span);
     output.appendChild(div);
   }
@@ -39,7 +43,9 @@ export function handleTable(data) {
 
     const topCell = document.createElement("td");
     topCell.colSpan = columns;
-    topCell.replaceChildren(parseANSI(topnote));
+    const elements = parseANSI(topnote);
+    if (elements)
+      topCell.replaceChildren(elements);
     topCell.classList.add("topnote");
 
     topRow.appendChild(topCell);
@@ -48,16 +54,18 @@ export function handleTable(data) {
 
   table.appendChild(headerRow);
 
-  data.data.forEach((row) => {
+  data.data.forEach((row: any) => {
     if (row) {
       let newRow = document.createElement("tr");
-      row.forEach((cell, idx) => {
+      row.forEach((cell: any, idx: number) => {
         if (!cell) return;
         let newCell = document.createElement("td");
         let text = cell["text"];
         if (!text) text = "";
 
-        newCell.replaceChildren(parseANSI(text));
+        const elements = parseANSI(text);
+        if (elements)
+          newCell.replaceChildren(elements);
 
         if (columnsRight.includes(idx)) {
           newCell.style.textAlign = "right";
@@ -83,14 +91,16 @@ export function handleTable(data) {
   });
 
   if (Array.isArray(data.bottomnotes)) {
-    data.bottomnotes.forEach((line, i) => {
+    data.bottomnotes.forEach((line: any, i: number) => {
       const row = document.createElement("tr");
       row.classList.add("bottomnote-row");
 
       const cell = document.createElement("td");
       cell.colSpan = columns;
       cell.classList.add("bottomnote");
-      cell.replaceChildren(parseANSI(line));
+      const elements = parseANSI(line);
+      if (elements)
+        cell.replaceChildren(elements);
       if (i === 0) cell.style.borderTop = "1px solid #0ff";
 
       row.appendChild(cell);

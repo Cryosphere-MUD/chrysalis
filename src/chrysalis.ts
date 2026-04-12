@@ -18,6 +18,8 @@ const command = document.getElementById("command");
 const output = document.getElementById("output");
 
 function updateSize() {
+  if (!wide || !main || !measure)
+      return;
   const fullWidth = wide.offsetWidth;
   const fullHeight = main.offsetHeight;
   const lineHeight = measure.offsetHeight;
@@ -33,30 +35,32 @@ updateSize();
 
 let connected = false;
 
-function handleConnect(e) {
+function handleConnect(e: Event) {
   document.title = conn_title;
   connected = true;
   terminal.injectText(["/// connected to " + mudhost + " " + mudport]);
   resetCommand();
-  reconnect.style.display = "none";
+  if (reconnect)
+    reconnect.style.display = "none";
 }
 
-function handleDisconnect(e) {
+function handleDisconnect(e: Event) {
   document.title = disconn_title;
   connected = false;
-  injectText(["/// connection closed by remote server"]);
-  reconnect.style.display = "inline";
+  terminal.injectText(["/// connection closed by remote server"]);
+  if (reconnect)
+    reconnect.style.display = "inline";
   resetTelnet();
-  resetANSIState();
+  terminal.resetANSIState();
 }
 
 function connect() {
   const ws = socketConnect();
-  ws.onmessage = (event) => {
+  ws.onmessage = (event: MessageEvent) => {
     const arr = new Uint8Array(event.data);
     arr.forEach((ch) => handleTelnet(ch));
     if (!negotiated(TELOPT_EOR))
-        handleTerminal();
+        terminal.handleTerminal();
     if (terminal.renderOutputData())
         scrollToEnd();
   };
@@ -65,26 +69,27 @@ function connect() {
   ws.onclose = handleDisconnect;
 }
 
-function handleKeyDown(event) {
+function handleKeyDown(event: KeyboardEvent) {
   if (connected) keyDown(event);
 }
 
-function handlePaste(event) {
-  if (connected) paste(event);
-}
-      
-
-command.onkeydown = handleKeyDown;
-
-main.addEventListener("click", () =>
+if (command)
 {
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed) {
-    command.focus();
-  }
-})
+  command.onkeydown = handleKeyDown;
 
-reconnect.onclick = () => {
+  if (main)
+  {
+    main.addEventListener("click", () =>
+    {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        command.focus();
+      }
+    })
+  }
+}
+
+reconnect!.onclick = () => {
   connect();
 };
 
