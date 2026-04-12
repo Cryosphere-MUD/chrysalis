@@ -23,7 +23,7 @@ import {
 
 import { socketSend } from "./socket.js";
 
-import { handleTerminal } from "./terminal.js";
+import { terminal } from "./terminal.js";
 
 import { settings } from "./settings.js";
 
@@ -37,7 +37,7 @@ let naws = false;
 let ttypeCount = 0;
 let telnetState = 0;
 let subMode = 0;
-let subData = [];
+let subData: number[] = [];
 
 export function resetTelnet() {
   naws = false;
@@ -47,8 +47,8 @@ export function resetTelnet() {
   subData = [];
 }
 
-function encodeIAC(data) {
-  const str = [];
+function encodeIAC(data: number[]) {
+  const str: number[] = [];
   data.forEach((ch) => {
     if (ch === IAC) {
       str.push(IAC);
@@ -58,7 +58,7 @@ function encodeIAC(data) {
   return str;
 }
 
-function encodeSubNeg(subMode, data) {
+function encodeSubNeg(subMode: number, data: number[]) {
   const cmd = [IAC, SB, subMode];
   data = encodeIAC(data);
   data.forEach((ch) => cmd.push(ch));
@@ -67,7 +67,7 @@ function encodeSubNeg(subMode, data) {
   return cmd;
 }
 
-function encodeGMCP(gmcpPackage, data) {
+function encodeGMCP(gmcpPackage: string, data: any) {
   return encodeSubNeg(
     TELOPT_GMCP,
     Array.from(gmcpPackage + " " + JSON.stringify(data), (char) =>
@@ -85,7 +85,7 @@ function encodeNAWS() {
   ]);
 }
 
-export function sendSize(width, height) {
+export function sendSize(width: number, height: number) {
   currentWidth = width;
   currentHeight = height;
   if (naws) {
@@ -93,14 +93,14 @@ export function sendSize(width, height) {
   }
 }
 
-let modes = {};
+let modes: Record<number, number> = {};
 
-export function negotiated(option)
+export function negotiated(option: number)
 {
         return modes[option];
 }
 
-function handleNegotiation(state, code) {
+function handleNegotiation(state: number, code: number) {
   if (state === WILL && code === ECHO) {
     setEcho(false);
     socketSend([IAC, DO, ECHO]);
@@ -135,16 +135,21 @@ function handleNegotiation(state, code) {
   }
 }
 
-function indexOfAny(str, chars) {
+function indexOfAny(str: string, chars: string) {
   for (let i = 0; i < str.length; i++) {
-    if (chars.includes(str[i])) {
+    if (chars.includes(str[i]!)) {
       return i;
     }
   }
   return -1;
 }
 
-function parseGMCP(byteArray) {
+interface GMCP {
+  package: string;
+  payload: any;
+};
+
+function parseGMCP(byteArray: number[]) : GMCP {
   const text = new TextDecoder("utf-8").decode(new Uint8Array(byteArray));
 
   const splitAt = indexOfAny(text, "[{");
@@ -167,13 +172,13 @@ function parseGMCP(byteArray) {
   return { package: packageName, payload };
 }
 
-function handleGMCP(gmcp) {
+function handleGMCP(gmcp: GMCP) {
   if (settings.handleTable && gmcp.package == "Client.Table 1") {
     settings.handleTable(gmcp.payload);
   }
 }
 
-function handleTType(subData) {
+function handleTType(subData: number[]) {
   if (subData.length !== 1 || subData[0] !== SEND) {
     return [];
   }
@@ -206,7 +211,7 @@ function handleTType(subData) {
   return cmd;
 }
 
-function handleSubnegotiation(subMode, subData) {
+function handleSubnegotiation(subMode: number, subData: number[]) {
   try {
     if (subMode === TELOPT_GMCP) {
       handleGMCP(parseGMCP(subData));
@@ -222,7 +227,7 @@ function handleSubnegotiation(subMode, subData) {
   }
 }
 
-export function handleTelnet(data) {
+export function handleTelnet(data: number) {
   if (telnetState === 0 && data === IAC) {
     telnetState = IAC;
     return;
@@ -248,7 +253,11 @@ export function handleTelnet(data) {
     }
 
     if (data === SE && subMode !== 0) {
-      socketSend(handleSubnegotiation(subMode, subData));
+      const subnegResult = handleSubnegotiation(subMode, subData);
+      if (subnegResult)
+      {
+        socketSend(subnegResult);
+      }
       telnetState = 0;
       subMode = 0;
       return;
@@ -261,7 +270,7 @@ export function handleTelnet(data) {
 
     if (data === EOR) {
       telnetState = 0;
-      handleTerminal();
+      terminal.handleTerminal();
       return;
     }
 
@@ -269,7 +278,7 @@ export function handleTelnet(data) {
       if (subMode) {
         subData.push(data);
       } else {
-        handleTerminal(data);
+        terminal.handleTerminal(data);
       }
       telnetState = 0;
       return;
@@ -294,7 +303,7 @@ export function handleTelnet(data) {
     if (subMode) {
       subData.push(data);
     } else {
-      handleTerminal(data);
+      terminal.handleTerminal(data);
     }
   } else {
     console.error("unknown byte", data, "in state", telnetState);
