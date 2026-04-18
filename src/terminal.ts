@@ -8,10 +8,11 @@ const BEL = "\x07";
 const OSC = "]";
 const OSC_ESC = "]\x1b";
 
-const output = document.getElementById("output");
-const prompt = document.getElementById("prompt");
+const main = document.getElementById("main")!;
+const output = document.getElementById("output")!;
+const prompt = document.getElementById("prompt")!;
 
-let attr = {
+let attr : Attributes = {
   bold: false,
   faint: false,
   fgcol: "white",
@@ -25,21 +26,30 @@ let attr = {
   hide: false,
   prop: false,
   url: null,
+  lang: "",
 };
 
 const defattr = Object.assign({}, attr);
 
-let outLine = [];
+interface LineElement {  
+  isIndentMarker?: boolean;
+  cls: any;
+  data: any;
+}
+
+type Line = LineElement[];
+
+let outLine: Line = [];
 let cr = false;
-let outputBatch = [];
+let outputBatch: Element[] = [];
 
 let lastData;
 
 let gotIndentMarker = false;
 
-let promptLine;
+let promptLine: Line;
 
-let mode = 0;
+let mode : number | string = 0;
 let escStr = "";
 
 let utf8fragment = "";
@@ -50,12 +60,30 @@ export function resetANSIState() {
   outputBatch = [];
   lastData = undefined;
   gotIndentMarker = false;
-  promptLine = false;
+  promptLine = [];
   mode = 0;
   escStr = "";
 }
 
-function attrToClassAndStyle(myattr) {
+interface Attributes
+{
+  fgcol: string;
+  bgcol: string;
+  hide: boolean;
+  inv: boolean;
+  faint: boolean;
+  prop: boolean;
+  bold: boolean;
+  ital: boolean;
+  over: boolean;
+  und: boolean;
+  und2: boolean;
+  str: boolean;
+  url: string | null;
+  lang: string;
+};
+
+function attrToClassAndStyle(myattr: Attributes) {
   let str = "";
   let style = "";
   let fg = myattr.fgcol;
@@ -115,20 +143,20 @@ function attrToClassAndStyle(myattr) {
   return { class: str, style, url: myattr.url, lang: myattr.lang };
 }
 
-function makeCallback(callback, param) {
+function makeCallback(callback: any, param: any) {
   return function () {
     callback(param);
   };
 }
 
-function willHandleURL(value) {
+function willHandleURL(value: string) {
   if (value.startsWith("prompt:")) return true;
   if (value.startsWith("send:")) return true;
   if (value.startsWith("https://")) return true;
   if (value.startsWith("http://")) return true;
 }
 
-function handleURLClick(value) {
+function handleURLClick(value: string) {
   if (value.startsWith("prompt:")) {
     let command = decodeURIComponent(value.slice(7));
     setEditText(command);
@@ -145,18 +173,18 @@ function handleURLClick(value) {
   }
 }
 
-function lineToElements(line) {
+function lineToElements(line: Line) {
   if (!line)
         return;
 
-  let outItem = document.createDocumentFragment();
-  let lastClass = {};
+  let outItem : DocumentFragment | HTMLSpanElement = document.createDocumentFragment();
+  let lastClass: any = {};
 
-  let workingLine = outItem;
+  let workingLine : DocumentFragment | HTMLSpanElement = outItem;
 
-  let currentSpan;
+  let currentSpan : HTMLSpanElement | null = null;
 
-  let indent;
+  let indent : number;
 
   line.forEach((arg, pos) => {
     if (arg.isIndentMarker && indent == null) {
@@ -196,7 +224,8 @@ function lineToElements(line) {
       lastClass = cls;
     }
 
-    currentSpan.innerText += arg.data;
+    if (currentSpan)
+      currentSpan.innerText += arg.data;
   });
 
   if (currentSpan) {
@@ -206,7 +235,7 @@ function lineToElements(line) {
   return;
 }
 
-function outputData(data) {
+function outputData(data: any) {
   if (data == null) {
     return;
   }
@@ -225,7 +254,7 @@ export function renderOutputData() {
   return true;
 }
 
-function handleChar(data) {
+function handleChar(data: string, attr: Attributes) {
   if (data === "\r") {
     cr = true;
   } else if (data === "\n") {
@@ -264,7 +293,7 @@ function handlePrompt() {
   outLine = [];
 }
 
-export function appendCommand(command, echo) {
+export function appendCommand(command: string, echo: boolean) {
   outputData(lineToElements(promptLine));
   if (echo) {
     outputData(command);
@@ -279,20 +308,24 @@ export function scrollToEnd() {
   main.scrollTop = main.scrollHeight;
 }
 
-export function injectText(text) {
+export function injectText(text: string[]) {
   outputData(text);
   outputData(document.createElement("br"));
   renderOutputData();
 }
 
-function gettruecolor(r, g, b) {
+function gettruecolor(r: string, g: string, b: string) {
   let col =
     "#" +
-    [r, g, b].map((x) => parseInt(x).toString(16).padStart(2, "0")).join("");
+    [r, g, b].map((x: string) => parseInt(x).toString(16).padStart(2, "0")).join("");
   return col;
 }
 
-function get256(code) {
+function get256(arg: string) {
+  const intensities = ["00", "5f", "87", "af", "d7", "ff"]; // per xterm
+
+  let code = parseInt(arg, 10);
+
   if (code < 16) {
     const colors = [
       "black",
@@ -315,18 +348,15 @@ function get256(code) {
     return colors[code];
   }
 
-  const intensities = ["00", "5f", "87", "af", "d7", "ff"]; // per xterm
-
-  code = parseInt(code, 10);
   if (code >= 16 && code < 232) {
     code -= 16;
     const b = code % 6;
     const g = Math.floor(code / 6) % 6;
     const r = Math.floor(code / 36) % 6;
     return "#"
-      .concat(intensities[r])
-      .concat(intensities[g])
-      .concat(intensities[b]);
+      .concat(intensities[r]!)
+      .concat(intensities[g]!)
+      .concat(intensities[b]!);
   }
   if (code >= 233 && code < 256) {
     const greyCodes = [
@@ -358,15 +388,15 @@ function get256(code) {
 
     code -= 233;
 
-    code = greyCodes[code];
+    let part = greyCodes[code]!;
 
-    return "#".concat(code).concat(code).concat(code);
+    return "#".concat(part).concat(part).concat(part);
   }
 
   return "#f8f";
 }
 
-function handleColorCommand(commands) {
+function handleColorCommand(commands: string[]) {
   for (let idx = 0; idx < commands.length; idx += 1) {
     const cmd = commands[idx];
     switch (cmd) {
@@ -448,14 +478,14 @@ function handleColorCommand(commands) {
       case "38":
         if (commands[idx + 1] == "2") {
           attr.fgcol = gettruecolor(
-            commands[idx + 2],
-            commands[idx + 3],
-            commands[idx + 4]
+            commands[idx + 2]!,
+            commands[idx + 3]!,
+            commands[idx + 4]!
           );
           idx += 4;
         }
         if (commands[idx + 1] == "5") {
-          attr.fgcol = get256(commands[idx + 2]);
+          attr.fgcol = get256(commands[idx + 2]!)!;
           idx += 2;
         }
         break;
@@ -489,14 +519,14 @@ function handleColorCommand(commands) {
       case "48":
         if (commands[idx + 1] == "2") {
           attr.bgcol = gettruecolor(
-            commands[idx + 2],
-            commands[idx + 3],
-            commands[idx + 4]
+            commands[idx + 2]!,
+            commands[idx + 3]!,
+            commands[idx + 4]!
           );
           idx += 4;
         }
         if (commands[idx + 1] == "5") {
-          attr.bgcol = get256(commands[idx + 2]);
+          attr.bgcol = get256(commands[idx + 2]!)!;
         }
         idx += 2;
         break;
@@ -515,11 +545,11 @@ function handleColorCommand(commands) {
   }
 }
 
-function handleEscape(str, code) {
+function handleEscape(str: string, code: string) {
   if (code === "m" && str[0] === "[") {
     let commands = str.slice(1).split(";");
     if (commands.length === 0) {
-      commands = [0];
+      commands = ["0"];
     }
     handleColorCommand(commands);
   }
@@ -528,26 +558,27 @@ function handleEscape(str, code) {
   }
 }
 
-function isLetter(str) {
+function isLetter(str: string) {
   return str.length === 1 && str.match(/[a-z]/i);
 }
 
-function handleOsc(oscstr) {
+function handleOsc(oscstr: string) {
   let commands = oscstr.slice(0).split(";");
-  if (commands[0] == "0" || commands[0] == "2") document.title = commands[1];
+  if (commands[0] == "0" || commands[0] == "2")
+    document.title = commands[1]!;
 
   if (commands[0] == "8") {
-    if (commands[2] === "" || willHandleURL(commands[2])) {
-      attr.url = commands[2];
+    if (commands[2] === "" || willHandleURL(commands[2]!)) {
+      attr.url = commands[2]!;
     }
   }
 
   if (commands[0] == "639") {
-    attr.lang = commands[1];
+    attr.lang = commands[1]!;
   }
 }
 
-export function handleANSI(data, charHandler = handleChar) {
+export function handleANSI(data : string | undefined, charHandler = handleChar) {
   if (data === undefined) {
     handlePrompt();
     return;
@@ -617,7 +648,7 @@ export function handleANSI(data, charHandler = handleChar) {
   charHandler(data, attr);
 }
 
-export function handleTerminal(data) {
+export function handleTerminal(data : number | undefined = undefined) {
   if (data === undefined) {
     handleANSI(undefined);
     return;
@@ -636,15 +667,15 @@ export function handleTerminal(data) {
   }
 }
 
-export function parseANSI(text) {
+export function parseANSI(text: string) {
   const origattr = Object.assign({}, attr);
   attr = Object.assign({}, defattr);
 
   let parsedText = "";
 
-  let buffer = [];
+  let buffer: Line = [];
 
-  let handler = (data, attr) => {
+  let handler = (data: any, attr: Attributes) => {
     const cls = attrToClassAndStyle(attr);
     buffer.push({ cls, data });
     parsedText += data;
