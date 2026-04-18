@@ -25,6 +25,8 @@ import { socketSend } from "./socket.js";
 
 import { handleTerminal } from "./terminal.js";
 
+import { setVitals } from "./ux.js";
+
 import { settings } from "./settings.js";
 
 import { setEcho } from "./command.js";
@@ -130,7 +132,7 @@ function handleNegotiation(state: number, code: number) {
     socketSend(
       encodeGMCP("Core.Hello", { client: "Chrysalis", version: "2025.06.01" })
     );
-    socketSend(encodeGMCP("Core.Supports.Set", ["Client.Table 1"]));
+    socketSend(encodeGMCP("Core.Supports.Set", ["Client.Table 1", "Char.Vitals 1"]));
     return;
   }
 }
@@ -170,6 +172,9 @@ function parseGMCP(byteArray: number[]) {
 function handleGMCP(gmcp: any) {
   if (settings.handleTable && gmcp.package == "Client.Table 1") {
     settings.handleTable(gmcp.payload);
+  }
+  if (gmcp.package == "Char.Vitals") {
+    setVitals(gmcp.payload)
   }
 }
 
