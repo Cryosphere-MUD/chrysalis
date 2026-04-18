@@ -65,6 +65,14 @@ body {
   color: black;
 }
 
+.statbutton {
+  border: 1px blue solid;
+  padding: 0.5em;
+  margin: 0.5em;
+  display: inline-block;
+  position: static;
+}
+
 #prompt {
   float: left;
 }
