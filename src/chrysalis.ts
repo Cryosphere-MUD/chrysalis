@@ -15,15 +15,31 @@ const measure = document.getElementById("measure")!;
 const wide = document.getElementById("wide")!;
 const reconnect = document.getElementById("reconnect")!;
 const command = document.getElementById("command")!;
+const output = document.getElementById("output")!;
+
+function getCharSize(container: HTMLElement) {
+  const test = document.createElement("span");
+  test.textContent = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // 40 chars
+  test.style.whiteSpace = "pre";
+
+  container.appendChild(test);
+
+  const rect = test.getBoundingClientRect();
+  const charWidth = rect.width / test.textContent.length;
+  const charHeight = rect.height;
+
+  container.removeChild(test);
+
+  return { charWidth, charHeight };
+}
 
 function updateSize() {
-  const fullWidth = wide.offsetWidth;
-  const fullHeight = main.offsetHeight;
-  const lineHeight = measure.offsetHeight;
+  const { charWidth, charHeight } = getCharSize(output);
 
-  const width = Math.floor(fullWidth / measure.offsetWidth) - 10;
-  const height = Math.floor(fullHeight / lineHeight) - 2;
-  sendSize(width, height);
+  const cols = Math.floor(output.clientWidth / charWidth);
+  const rows = Math.floor(output.clientHeight / charHeight);
+
+  sendSize(cols, rows);
 }
 
 window.addEventListener("resize", updateSize);

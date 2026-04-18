@@ -8,9 +8,9 @@ Because websockets use a HTTP frame rather than being raw sockets, you'll
 need to run a websocket proxy on a server.  I have been using websockify
 (github.com/novnc/websockify)
 
-To install on your MUD, just serve these files, altering settings.js to
-have the websock URL. It has one dependency, utf8.js, which is provided
-as a git submodule. (git submodule update)
+To build, use "npm run build".  You then serve the files in dist, altering
+settings.js to have the websock URL. It has one dependency, utf8.js, which
+is provided as a git submodule. (git submodule update)
 
 Technically this is chrysalis2, which is why it identifies itself as such
 in TTYPE. The original iteration was AJAX based and had the misfortune to
