@@ -10,12 +10,11 @@ import { keyDown, resetCommand } from "./command.js";
 
 import { TELOPT_EOR } from "./telnetconstants.js";
 
-const main = document.getElementById("main");
-const measure = document.getElementById("measure");
-const wide = document.getElementById("wide");
-const reconnect = document.getElementById("reconnect");
-const command = document.getElementById("command");
-const output = document.getElementById("output");
+const main = document.getElementById("main")!;
+const measure = document.getElementById("measure")!;
+const wide = document.getElementById("wide")!;
+const reconnect = document.getElementById("reconnect")!;
+const command = document.getElementById("command")!;
 
 function updateSize() {
   const fullWidth = wide.offsetWidth;
@@ -33,7 +32,7 @@ updateSize();
 
 let connected = false;
 
-  function handleConnect(e) {
+function handleConnect(e: Event) {
   document.title = conn_title;
   connected = true;
   injectText(["/// connected to " + mudhost + " " + mudport]);
@@ -41,7 +40,7 @@ let connected = false;
   reconnect.style.display = "none";
 }
 
-function handleDisconnect(e) {
+function handleDisconnect(e: Event) {
   document.title = disconn_title;
   connected = false;
   injectText(["/// connection closed by remote server"]);
@@ -52,7 +51,7 @@ function handleDisconnect(e) {
 
 function connect() {
   const ws = socketConnect();
-  ws.onmessage = (event) => {
+  ws.onmessage = (event: MessageEvent) => {
     const arr = new Uint8Array(event.data);
     arr.forEach((ch) => handleTelnet(ch));
     if (!negotiated(TELOPT_EOR))
@@ -65,14 +64,10 @@ function connect() {
   ws.onclose = handleDisconnect;
 }
 
-function handleKeyDown(event) {
+function handleKeyDown(event: KeyboardEvent) {
   if (connected) keyDown(event);
 }
 
-function handlePaste(event) {
-  if (connected) paste(event);
-}
-      
 
 command.onkeydown = handleKeyDown;
 

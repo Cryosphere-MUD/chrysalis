@@ -4,9 +4,9 @@ import { socketSend } from "./socket.js";
 
 import { appendCommand } from "./terminal.js";
 
-const command = document.getElementById("command");
+const command = document.getElementById("command") as HTMLInputElement;
 
-export function sendCommand(value) {
+export function sendCommand(value: string) {
   value = utf8.encode(value);
 
   const cmd = [];
@@ -22,16 +22,24 @@ export function sendCommand(value) {
 }
 
 let editpassword = false;
-let editcommandpos = null;
-let futurecommand = null;
-let editcommands = [];
+let editcommandpos: number | null = null;
+let futurecommand: string | null = null;
+let editcommands: string[] = [];
 
-export function setEcho(yes) {
+export function setEcho(yes: boolean) {
   editpassword = !yes;
   if (editpassword)
     command.type = "password";
   else
     command.type = "input";
+}
+
+function setCommand(newCommand: string | undefined | null)
+{
+    if (newCommand != null)
+      command.value = newCommand;
+    else
+      command.value = "";
 }
 
 function doHistoryPrev() {
@@ -41,7 +49,7 @@ function doHistoryPrev() {
   }
   if (editcommandpos > 0) {
     editcommandpos--;
-    command.value = editcommands[editcommandpos];
+    setCommand(editcommands[editcommandpos]);
   }
   return true;
 }
@@ -50,10 +58,10 @@ function doHistoryNext() {
   if (editcommandpos != null && editcommandpos < editcommands.length) {
     editcommandpos++;
     if (editcommandpos === editcommands.length) {
-      command.value = futurecommand;
+      setCommand(futurecommand);
       editcommandpos = null;
     } else {
-      command.value = editcommands[editcommandpos];
+      setCommand(editcommands[editcommandpos]);
     }
   }
   return true;
@@ -71,7 +79,7 @@ function doEnter() {
   return true;
 }
 
-export function setEditText(newcommand) {
+export function setEditText(newcommand : string) {
   command.value = newcommand;
 }
 
@@ -79,7 +87,7 @@ export function resetCommand() {
   setEditText("");
 }
 
-const keyHandlers = 
+const keyHandlers: Record<string, () => boolean> = 
 {
         "Enter": doEnter,
         "ArrowUp": doHistoryPrev,
@@ -88,7 +96,7 @@ const keyHandlers =
         "Control-N": doHistoryNext,
 };
 
-export function keyDown(event) {
+export function keyDown(event : KeyboardEvent) {
   let keyname = event.code;
   keyname = keyname.replace(/^Key/, '');
 
@@ -102,9 +110,11 @@ export function keyDown(event) {
         keyname = "Control-" + keyname;
   }
 
-  if (keyHandlers[keyname] != null)
+  let handler = keyHandlers[keyname];
+
+  if (handler != null)
   {
-        if (keyHandlers[keyname]() !== false)
+        if (handler() !== false)
         {
                 event.preventDefault();
                 return;

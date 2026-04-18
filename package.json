@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "build": "tsc && cp -r public/* utf8.js/utf8.js dist/",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "utf8": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/utf8": "^3.0.3",
+    "typescript": "^6.0.2"
+  }
+}
