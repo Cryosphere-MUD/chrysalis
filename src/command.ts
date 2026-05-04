@@ -2,7 +2,7 @@ import { htmlescape } from "./utils.js";
 
 import { socketSend } from "./socket.js";
 
-import { appendCommand } from "./terminal.js";
+import { terminal } from "./terminal.js";
 
 const command = document.getElementById("command") as HTMLInputElement;
 
@@ -69,7 +69,7 @@ function doHistoryNext() {
 
 function doEnter() {
   sendCommand(command.value);
-  appendCommand(command.value, !editpassword);
+  terminal.appendCommand(command.value, !editpassword);
   if (!editpassword && !command.value.match(/^\s*$/) && command.value !== editcommands[editcommands.length-1]) {
     editcommands.push(command.value);
   }

@@ -12,7 +12,7 @@ const main = document.getElementById("main")!;
 const output = document.getElementById("output")!;
 const prompt = document.getElementById("prompt")!;
 
-let attr : Attributes = {
+const defattr = {
   bold: false,
   faint: false,
   fgcol: "white",
@@ -29,44 +29,390 @@ let attr : Attributes = {
   lang: "",
 };
 
-const defattr = Object.assign({}, attr);
+type Line = LineElement[];
 
-interface LineElement {  
+class ANSIParser {
+  attr: Attributes;
+  outLine: Line;
+  cr: boolean;
+  outputBatch: Element[];
+  promptLine: Line;
+  gotIndentMarker: boolean;
+  mode: number | string;
+  escStr: string;
+  utf8fragment: string;
+
+  constructor() {
+    this.attr = Object.assign({}, defattr);
+    this.outLine = [];
+    this.cr = false;
+    this.outputBatch = [];
+    this.gotIndentMarker = false;
+    this.promptLine = [];
+    this.mode = 0;
+    this.escStr = "";
+    this.utf8fragment = "";
+  }
+
+  handleColorCommand(commands: string[]) {
+    for (let idx = 0; idx < commands.length; idx += 1) {
+      const cmd = commands[idx];
+      switch (cmd) {
+        case "":
+        case "0":
+          let oldprop = this.attr.prop;
+          let oldlang = this.attr.lang;
+          this.attr = Object.assign({}, defattr);
+          this.attr.prop = oldprop;
+          this.attr.lang = oldlang;
+          break;
+        case "1":
+          this.attr.bold = true;
+          break;
+        case "2":
+          this.attr.faint = true;
+          break;
+        case "3":
+          this.attr.ital = true;
+          break;
+        case "9":
+          this.attr.str = true;
+          break;
+        case "4":
+          this.attr.und = true;
+          break;
+        case "7":
+          this.attr.inv = true;
+          break;
+        case "8":
+          this.attr.hide = true;
+          break;
+        case "21":
+          this.attr.und2 = true;
+          break;
+        case "22":
+          this.attr.bold = false;
+          this.attr.faint = false;
+          break;
+        case "23":
+          this.attr.ital = false;
+          break;
+        case "24":
+          this.attr.und = false;
+          break;
+        case "27":
+          this.attr.inv = false;
+          break;
+        case "28":
+          this.attr.hide = false;
+          break;
+        case "29":
+          this.attr.str = false;
+          break;
+        case "30":
+          this.attr.fgcol = "black";
+          break;
+        case "31":
+          this.attr.fgcol = "red";
+          break;
+        case "32":
+          this.attr.fgcol = "green";
+          break;
+        case "33":
+          this.attr.fgcol = "yellow";
+          break;
+        case "34":
+          this.attr.fgcol = "blue";
+          break;
+        case "35":
+          this.attr.fgcol = "magenta";
+          break;
+        case "36":
+          this.attr.fgcol = "cyan";
+          break;
+        case "37":
+          this.attr.fgcol = "white";
+          break;
+        case "38":
+          if (commands[idx + 1] == "2") {
+            this.attr.fgcol = gettruecolor(
+              commands[idx + 2]!,
+              commands[idx + 3]!,
+              commands[idx + 4]!
+            );
+            idx += 4;
+          }
+          if (commands[idx + 1] == "5") {
+            this.attr.fgcol = get256(commands[idx + 2]!)!;
+            idx += 2;
+          }
+          break;
+        case "39":
+          this.attr.fgcol = "white";
+          break;
+        case "40":
+          this.attr.bgcol = "black";
+          break;
+        case "41":
+          this.attr.bgcol = "red";
+          break;
+        case "42":
+          this.attr.bgcol = "green";
+          break;
+        case "43":
+          this.attr.bgcol = "yellow";
+          break;
+        case "44":
+          this.attr.bgcol = "blue";
+          break;
+        case "45":
+          this.attr.bgcol = "magenta";
+          break;
+        case "46":
+          this.attr.bgcol = "cyan";
+          break;
+        case "47":
+          this.attr.bgcol = "white";
+          break;
+        case "48":
+          if (commands[idx + 1] == "2") {
+            this.attr.bgcol = gettruecolor(
+              commands[idx + 2]!,
+              commands[idx + 3]!,
+              commands[idx + 4]!
+            );
+            idx += 4;
+          }
+          if (commands[idx + 1] == "5") {
+            this.attr.bgcol = get256(commands[idx + 2]!)!;
+          }
+          idx += 2;
+          break;
+        case "49":
+          this.attr.bgcol = "black";
+          break;
+        case "53":
+          this.attr.over = true;
+          break;
+        case "55":
+          this.attr.over = false;
+          break;
+        default:
+          console.log("unknown ANSI code", cmd);
+      }
+    }
+  }
+
+  handleEscape(str: string, code: string) {
+    if (code === "m" && str[0] === "[") {
+      let commands = str.slice(1).split(";");
+      if (commands.length === 0) {
+        commands = ["0"];
+      }
+      this.handleColorCommand(commands);
+    }
+    if (code == "z" && str[0] === "{") {
+      this.gotIndentMarker = true;
+    }
+  }
+
+  handleOsc(oscstr: string) {
+    let commands = oscstr.slice(0).split(";");
+    if (commands[0] == "0" || commands[0] == "2")
+      document.title = commands[1]!;
+
+    if (commands[0] == "8") {
+      if (commands[2] === "" || willHandleURL(commands[2]!)) {
+        this.attr.url = commands[2]!;
+      }
+    }
+
+    if (commands[0] == "639") {
+      this.attr.lang = commands[1]!;
+    }
+  }
+
+  handleANSI(data: string | undefined, charHandler?: (data: string, attr: Attributes)=>void) {
+    if (data === undefined) {
+      terminal.handlePrompt();
+      return;
+    }
+
+    if (this.mode == OSC_ESC) {
+      if (data == "\\") {
+        this.handleOsc(this.escStr);
+        this.escStr = "";
+        this.mode = 0;
+        return;
+      }
+      this.mode = 0;
+      return;
+    }
+
+    if (this.mode == OSC) {
+      if (data == ESC) {
+        this.mode = OSC_ESC;
+        return;
+      }
+      if (data == BEL) {
+        this.handleOsc(this.escStr);
+        this.escStr = "";
+        this.mode = 0;
+        return;
+      }
+      this.escStr += data;
+      return;
+    }
+
+    if (this.mode == CSI) {
+      if (isLetter(data)) {
+        this.handleEscape(this.escStr, data);
+        this.mode = 0;
+        this.escStr = "";
+      }
+      this.escStr += data;
+      return;
+    }
+
+    if (this.mode == ESC) {
+      if (data == OSC) {
+        this.mode = OSC;
+        this.escStr = "";
+        return;
+      }
+      if (data == "[") {
+        this.mode = CSI;
+      }
+      this.escStr += data;
+      return;
+    }
+
+    if (data === ESC) {
+      this.mode = ESC;
+      this.escStr = "";
+      return;
+    }
+
+    if (data === CSI) {
+      this.mode = ESC;
+      this.escStr = "[";
+      return;
+    }
+
+    if (charHandler)
+      charHandler(data, this.attr);
+    else
+      this.handleChar(data, this.attr);
+  }
+
+  handleTerminal(data: number | undefined = undefined) {
+    if (data === undefined) {
+      this.handleANSI(undefined);
+      return;
+    }
+    if (data >= 0 && data <= 0x7f) {
+      this.handleANSI(String.fromCharCode(data));
+      return;
+    }
+    this.utf8fragment += String.fromCharCode(data);
+    try {
+      const decoded = utf8.decode(this.utf8fragment);
+      this.utf8fragment = "";
+      this.handleANSI(decoded);
+    } catch (err) {
+      // do nothing
+    }
+  }
+
+  resetANSIState() {
+    this.outLine = [];
+    this.cr = false;
+    this.outputBatch = [];
+    this.gotIndentMarker = false;
+    this.promptLine = [];
+    this.mode = 0;
+    this.escStr = "";
+  }
+
+  outputData(data: any) {
+    if (data == null) {
+      return;
+    }
+    this.outputBatch.push(data);
+  }
+
+  renderOutputData() {
+    if (this.outputBatch.length == 0)
+      return false;
+    const frag = document.createDocumentFragment();
+    for (let line of this.outputBatch) {
+      frag.append(line);
+    }
+    output.appendChild(frag);
+    this.outputBatch = [];
+    return true;
+  }
+
+  handleChar(data: string, attr: Attributes) {
+    if (data === "\r") {
+      this.cr = true;
+    } else if (data === "\n") {
+      if (this.outLine.length) {
+        this.outputData(lineToElements(this.outLine));
+      }
+      this.outputData(document.createElement("br"));
+      this.outLine = [];
+      this.cr = false;
+    } else {
+      if (this.cr) {
+        this.outLine = [];
+        this.cr = false;
+      }
+
+      const cls = attrToClassAndStyle(attr);
+
+      if (this.gotIndentMarker) {
+        this.outLine.push({ cls, data, isIndentMarker: this.gotIndentMarker });
+        this.gotIndentMarker = false;
+      } else this.outLine.push({ cls, data });
+    }
+  }
+
+  handlePrompt() {
+    if (!negotiated(TELOPT_EOR))
+      while (prompt.firstChild)
+        output.appendChild(prompt.firstChild);
+
+    this.promptLine = this.outLine;
+    const promptElements = lineToElements(this.outLine);
+    if (promptElements)
+      prompt.replaceChildren(promptElements);
+    else
+      prompt.innerHTML = "";
+    this.outLine = [];
+  }
+
+  appendCommand(command: string, echo: boolean) {
+    this.outputData(lineToElements(this.promptLine));
+    if (echo) {
+      this.outputData(command);
+      this.outputData(document.createElement("br"));
+      this.renderOutputData();
+    }
+    prompt.replaceChildren();
+    scrollToEnd()
+  }
+
+};
+
+
+interface LineElement {
   isIndentMarker?: boolean;
   cls: any;
   data: any;
 }
 
-type Line = LineElement[];
-
-let outLine: Line = [];
-let cr = false;
-let outputBatch: Element[] = [];
-
-let lastData;
-
-let gotIndentMarker = false;
-
-let promptLine: Line;
-
-let mode : number | string = 0;
-let escStr = "";
-
-let utf8fragment = "";
-
-export function resetANSIState() {
-  outLine = [];
-  cr = false;
-  outputBatch = [];
-  lastData = undefined;
-  gotIndentMarker = false;
-  promptLine = [];
-  mode = 0;
-  escStr = "";
-}
-
-interface Attributes
-{
+interface Attributes {
   fgcol: string;
   bgcol: string;
   hide: boolean;
@@ -112,7 +458,7 @@ function attrToClassAndStyle(myattr: Attributes) {
   if (bg[0] === "#") {
     if (style.length)
       style += ";";
-    
+
     style += "background-color:";
     style += bg;
   } else {
@@ -165,7 +511,7 @@ function handleURLClick(value: string) {
   if (value.startsWith("send:")) {
     let command = decodeURIComponent(value.slice(5));
     sendCommand(command);
-    appendCommand(command, true);
+    terminal.appendCommand(command, true);
     return;
   }
   if (value.startsWith("https://") || value.startsWith("http://")) {
@@ -175,16 +521,16 @@ function handleURLClick(value: string) {
 
 function lineToElements(line: Line) {
   if (!line)
-        return;
+    return;
 
-  let outItem : DocumentFragment | HTMLSpanElement = document.createDocumentFragment();
+  let outItem: DocumentFragment | HTMLSpanElement = document.createDocumentFragment();
   let lastClass: any = {};
 
-  let workingLine : DocumentFragment | HTMLSpanElement = outItem;
+  let workingLine: DocumentFragment | HTMLSpanElement = outItem;
 
-  let currentSpan : HTMLSpanElement | null = null;
+  let currentSpan: HTMLSpanElement | null = null;
 
-  let indent : number;
+  let indent: number;
 
   line.forEach((arg, pos) => {
     if (arg.isIndentMarker && indent == null) {
@@ -235,83 +581,16 @@ function lineToElements(line: Line) {
   return;
 }
 
-function outputData(data: any) {
-  if (data == null) {
-    return;
-  }
-  outputBatch.push(data);
-}
 
-export function renderOutputData() {
-  if (outputBatch.length == 0)
-        return false;
-  const frag = document.createDocumentFragment();
-  for (let line of outputBatch) {
-    frag.append(line);
-  }
-  output.appendChild(frag);
-  outputBatch = [];
-  return true;
-}
-
-function handleChar(data: string, attr: Attributes) {
-  if (data === "\r") {
-    cr = true;
-  } else if (data === "\n") {
-    if (outLine.length) {
-      outputData(lineToElements(outLine));
-    }
-    outputData(document.createElement("br"));
-    outLine = [];
-    cr = false;
-  } else {
-    if (cr) {
-      outLine = [];
-      cr = false;
-    }
-
-    const cls = attrToClassAndStyle(attr);
-
-    if (gotIndentMarker) {
-      outLine.push({ cls, data, isIndentMarker: gotIndentMarker });
-      gotIndentMarker = false;
-    } else outLine.push({ cls, data });
-  }
-}
-
-function handlePrompt() {
-  if (!negotiated(TELOPT_EOR))
-    while (prompt.firstChild)
-      output.appendChild(prompt.firstChild);
-
-  promptLine = outLine;
-  const promptElements = lineToElements(outLine);
-  if (promptElements)
-        prompt.replaceChildren(promptElements);
-  else
-        prompt.innerHTML = "";
-  outLine = [];
-}
-
-export function appendCommand(command: string, echo: boolean) {
-  outputData(lineToElements(promptLine));
-  if (echo) {
-    outputData(command);
-    outputData(document.createElement("br"));
-    renderOutputData();
-  }
-  prompt.replaceChildren();
-  scrollToEnd()
-}
 
 export function scrollToEnd() {
   main.scrollTop = main.scrollHeight;
 }
 
 export function injectText(text: string[]) {
-  outputData(text);
-  outputData(document.createElement("br"));
-  renderOutputData();
+  terminal.outputData(text);
+  terminal.outputData(document.createElement("br"));
+  terminal.renderOutputData();
 }
 
 function gettruecolor(r: string, g: string, b: string) {
@@ -396,280 +675,12 @@ function get256(arg: string) {
   return "#f8f";
 }
 
-function handleColorCommand(commands: string[]) {
-  for (let idx = 0; idx < commands.length; idx += 1) {
-    const cmd = commands[idx];
-    switch (cmd) {
-      case "":
-      case "0":
-        let oldprop = attr.prop;
-        let oldlang = attr.lang;
-        attr = Object.assign({}, defattr);
-        attr.prop = oldprop;
-        attr.lang = oldlang;
-        break;
-      case "1":
-        attr.bold = true;
-        break;
-      case "2":
-        attr.faint = true;
-        break;
-      case "3":
-        attr.ital = true;
-        break;
-      case "9":
-        attr.str = true;
-        break;
-      case "4":
-        attr.und = true;
-        break;
-      case "7":
-        attr.inv = true;
-        break;
-      case "8":
-        attr.hide = true;
-        break;
-      case "21":
-        attr.und2 = true;
-        break;
-      case "22":
-        attr.bold = false;
-        attr.faint = false;
-        break;
-      case "23":
-        attr.ital = false;
-        break;
-      case "24":
-        attr.und = false;
-        break;
-      case "27":
-        attr.inv = false;
-        break;
-      case "28":
-        attr.hide = false;
-        break;
-      case "29":
-        attr.str = false;
-        break;
-      case "30":
-        attr.fgcol = "black";
-        break;
-      case "31":
-        attr.fgcol = "red";
-        break;
-      case "32":
-        attr.fgcol = "green";
-        break;
-      case "33":
-        attr.fgcol = "yellow";
-        break;
-      case "34":
-        attr.fgcol = "blue";
-        break;
-      case "35":
-        attr.fgcol = "magenta";
-        break;
-      case "36":
-        attr.fgcol = "cyan";
-        break;
-      case "37":
-        attr.fgcol = "white";
-        break;
-      case "38":
-        if (commands[idx + 1] == "2") {
-          attr.fgcol = gettruecolor(
-            commands[idx + 2]!,
-            commands[idx + 3]!,
-            commands[idx + 4]!
-          );
-          idx += 4;
-        }
-        if (commands[idx + 1] == "5") {
-          attr.fgcol = get256(commands[idx + 2]!)!;
-          idx += 2;
-        }
-        break;
-      case "39":
-        attr.fgcol = "white";
-        break;
-      case "40":
-        attr.bgcol = "black";
-        break;
-      case "41":
-        attr.bgcol = "red";
-        break;
-      case "42":
-        attr.bgcol = "green";
-        break;
-      case "43":
-        attr.bgcol = "yellow";
-        break;
-      case "44":
-        attr.bgcol = "blue";
-        break;
-      case "45":
-        attr.bgcol = "magenta";
-        break;
-      case "46":
-        attr.bgcol = "cyan";
-        break;
-      case "47":
-        attr.bgcol = "white";
-        break;
-      case "48":
-        if (commands[idx + 1] == "2") {
-          attr.bgcol = gettruecolor(
-            commands[idx + 2]!,
-            commands[idx + 3]!,
-            commands[idx + 4]!
-          );
-          idx += 4;
-        }
-        if (commands[idx + 1] == "5") {
-          attr.bgcol = get256(commands[idx + 2]!)!;
-        }
-        idx += 2;
-        break;
-      case "49":
-        attr.bgcol = "black";
-        break;
-      case "53":
-        attr.over = true;
-        break;
-      case "55":
-        attr.over = false;
-        break;
-      default:
-        console.log("unknown ANSI code", cmd);
-    }
-  }
-}
-
-function handleEscape(str: string, code: string) {
-  if (code === "m" && str[0] === "[") {
-    let commands = str.slice(1).split(";");
-    if (commands.length === 0) {
-      commands = ["0"];
-    }
-    handleColorCommand(commands);
-  }
-  if (code == "z" && str[0] === "{") {
-    gotIndentMarker = true;
-  }
-}
-
 function isLetter(str: string) {
   return str.length === 1 && str.match(/[a-z]/i);
 }
 
-function handleOsc(oscstr: string) {
-  let commands = oscstr.slice(0).split(";");
-  if (commands[0] == "0" || commands[0] == "2")
-    document.title = commands[1]!;
-
-  if (commands[0] == "8") {
-    if (commands[2] === "" || willHandleURL(commands[2]!)) {
-      attr.url = commands[2]!;
-    }
-  }
-
-  if (commands[0] == "639") {
-    attr.lang = commands[1]!;
-  }
-}
-
-export function handleANSI(data : string | undefined, charHandler = handleChar) {
-  if (data === undefined) {
-    handlePrompt();
-    return;
-  }
-
-  if (mode == OSC_ESC) {
-    if (data == "\\") {
-      handleOsc(escStr);
-      escStr = "";
-      mode = 0;
-      return;
-    }
-    mode = 0;
-    return;
-  }
-
-  if (mode == OSC) {
-    if (data == ESC) {
-      mode = OSC_ESC;
-      return;
-    }
-    if (data == BEL) {
-      handleOsc(escStr);
-      escStr = "";
-      mode = 0;
-      return;
-    }
-    escStr += data;
-    return;
-  }
-
-  if (mode == CSI) {
-    if (isLetter(data)) {
-      handleEscape(escStr, data);
-      mode = 0;
-      escStr = "";
-    }
-    escStr += data;
-    return;
-  }
-
-  if (mode == ESC) {
-    if (data == OSC) {
-      mode = OSC;
-      escStr = "";
-      return;
-    }
-    if (data == "[") {
-      mode = CSI;
-    }
-    escStr += data;
-    return;
-  }
-
-  if (data === ESC) {
-    mode = ESC;
-    escStr = "";
-    return;
-  }
-
-  if (data === CSI) {
-    mode = ESC;
-    escStr = "[";
-    return;
-  }
-
-  charHandler(data, attr);
-}
-
-export function handleTerminal(data : number | undefined = undefined) {
-  if (data === undefined) {
-    handleANSI(undefined);
-    return;
-  }
-  if (data >= 0 && data <= 0x7f) {
-    handleANSI(String.fromCharCode(data));
-    return;
-  }
-  utf8fragment += String.fromCharCode(data);
-  try {
-    const decoded = utf8.decode(utf8fragment);
-    utf8fragment = "";
-    handleANSI(decoded);
-  } catch (err) {
-    // do nothing
-  }
-}
-
 export function parseANSI(text: string) {
-  const origattr = Object.assign({}, attr);
-  attr = Object.assign({}, defattr);
+  let parser = new ANSIParser();
 
   let parsedText = "";
 
@@ -682,12 +693,12 @@ export function parseANSI(text: string) {
   };
 
   Array.from(text).forEach((ch) => {
-    handleANSI(ch, handler);
+    parser.handleANSI(ch, handler);
   });
 
   if (buffer.length == 0) return document.createDocumentFragment();
 
-  attr = Object.assign({}, origattr);
-
   return lineToElements(buffer);
 }
+
+export let terminal = new ANSIParser();

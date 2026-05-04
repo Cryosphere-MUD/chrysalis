@@ -2,7 +2,7 @@ import { handleTelnet, negotiated, sendSize, resetTelnet } from "./telnet.js";
 
 import { socketConnect } from "./socket.js";
 
-import { handleTerminal, injectText, renderOutputData, resetANSIState, scrollToEnd } from "./terminal.js";
+import { terminal, injectText, scrollToEnd } from "./terminal.js";
 
 import { mudhost, mudport, conn_title, disconn_title } from "./settings.js";
 
@@ -62,7 +62,7 @@ function handleDisconnect(e: Event) {
   injectText(["/// connection closed by remote server"]);
   reconnect.style.display = "inline";
   resetTelnet();
-  resetANSIState();
+  terminal.resetANSIState();
 }
 
 function connect() {
@@ -71,8 +71,8 @@ function connect() {
     const arr = new Uint8Array(event.data);
     arr.forEach((ch) => handleTelnet(ch));
     if (!negotiated(TELOPT_EOR))
-        handleTerminal();
-    if (renderOutputData())
+        terminal.handleTerminal();
+    if (terminal.renderOutputData())
         scrollToEnd();
   };
   ws.onopen = handleConnect;
